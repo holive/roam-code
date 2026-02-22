@@ -26,6 +26,8 @@
 - [x] MCP tool presets: core/review/refactor/debug/architecture/full via `ROAM_MCP_PRESET` env var (#3)
 - [x] All 61 MCP tool descriptions shortened to <60 tokens each (#5)
 - [x] `roam_expand_toolset` meta-tool — lists presets and their tools (#6)
+- [x] Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose_issue` — each replaces 2-4 tool calls (#2)
+- [x] Structured return schemas (`output_schema`) on all MCP tools — compound + core get custom schemas, rest get envelope default (#4)
 
 ---
 
@@ -54,9 +56,9 @@ Goal: fix MCP crisis + close CI gap + launch to the world.
 | # | Item | Effort | v11? | Depends On | Status |
 |---|------|--------|------|------------|--------|
 | 1 | **[v11]** Replace subprocess MCP with in-process Python calls | 3d | YES | — | **DONE** |
-| 2 | **[v11]** Compound MCP operations: `roam_explore`, `roam_understand`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose` | 3-4d | YES | #1 | |
+| 2 | **[v11]** Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose_issue` | 3-4d | YES | #1 | **DONE** |
 | 3 | **[v11]** MCP tool presets: core (16), review (27), refactor (26), debug (27), architecture (29), full | 2-3d | YES | #1 | **DONE** |
-| 4 | **[v11]** Structured return schemas on all MCP tool descriptions | 1-2d | YES | #3 | |
+| 4 | **[v11]** Structured return schemas on all MCP tool descriptions | 1-2d | YES | #3 | **DONE** |
 | 5 | **[v11]** Shorten all tool descriptions to <60 tokens each | 1d | YES | #3 | **DONE** |
 | 6 | **[v11]** `roam_expand_toolset` meta-tool for dynamic mid-session preset switching | 2-3d | YES | #3 | **DONE** |
 | 7 | Batch MCP operations: `batchSearch` (10 queries), `batchGet` (50 symbols) | 2-3d | no | #1 | |
@@ -320,13 +322,13 @@ Evaluated across 7 reports. Grouped by reason:
 
 | Metric | v2 Backlog | v3 Backlog | Change |
 |--------|-----------|-----------|--------|
-| Total active items | 139 | **56** (65 - 9 done) | -60% |
+| Total active items | 139 | **54** (65 - 11 done) | -61% |
 | Epics | 0 | **11** | structured |
-| v11 scope | undefined | **21 items, 12 remaining** | 9/21 done (43%) |
+| v11 scope | undefined | **21 items, 10 remaining** | 11/21 done (52%) |
 | Someday/Maybe | 0 | **20 (30+ expanded)** | parked cleanly |
 | Killed | 0 | **47+** | ruthless focus |
 | P0-equivalent (v11) | 14 scattered | **21 coherent** | sequenced |
-| Completed | — | **9 (Epic 2 + Epic 1 partial)** | Track A+B |
+| Completed | — | **11 (Epic 2 done + Epic 1: 6/10)** | Track A+B |
 
 ---
 
@@ -381,7 +383,7 @@ Epic 9 (Search v2):  #14 → #54 → #56
 ```
 TRACK A (critical path, ~10 days):
   #1 in-process MCP ← DONE + #3 presets ← DONE + #5 descriptions ← DONE + #6 expand_toolset ← DONE
-  → #2 compound ops (3-4d) → #4 schemas (1-2d)
+  → #2 compound ops ← DONE → #4 schemas ← DONE
   → #31 MCP listings (2h) → #32 Show HN (1h)
 
 TRACK B (parallel, ~8 days):
