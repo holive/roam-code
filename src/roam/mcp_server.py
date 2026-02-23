@@ -166,19 +166,35 @@ def _run_roam(args: list[str], root: str = ".") -> dict:
 
 @_tool(name="roam_understand")
 def understand(root: str = ".") -> dict:
-    """Get a full codebase briefing in a single call. Call this FIRST when starting work on a new or unfamiliar codebase. Covers tech stack, architecture (layers, clusters, entry points), health score, hotspots, conventions, and patterns. ~2-4K token output. Do NOT explore manually with Glob/Grep/Read -- use this instead. Follow with search_symbol or context to drill into specifics."""
+    """Get a full codebase briefing in a single call.
+
+    Call this FIRST when starting work on a new or unfamiliar codebase.
+    Covers tech stack, architecture (layers, clusters, entry points),
+    health score, hotspots, conventions, and patterns. ~2-4K token output.
+    Do NOT explore manually with Glob/Grep/Read -- use this instead.
+    Follow with search_symbol or context to drill into specifics."""
     return _run_roam(["understand"], root)
 
 
 @_tool(name="roam_health")
 def health(root: str = ".") -> dict:
-    """Codebase health score (0-100) with issue breakdown. Call this to assess overall code quality before deciding where to focus refactoring, or to check whether recent changes degraded health. Skip if you already called understand (includes health) or preflight (includes it per-symbol)."""
+    """Codebase health score (0-100) with issue breakdown.
+
+    Call this to assess overall code quality before deciding where to
+    focus refactoring, or to check whether recent changes degraded health.
+    Skip if you already called understand (includes health) or preflight
+    (includes it per-symbol)."""
     return _run_roam(["health"], root)
 
 
 @_tool(name="roam_preflight")
 def preflight(target: str = "", staged: bool = False, root: str = ".") -> dict:
-    """Pre-change safety check. Call this BEFORE modifying any symbol or file. Combines blast radius, affected tests, complexity, coupling, and fitness violations in one call. Replaces 5-6 separate tool calls. Do NOT call context, impact, affected_tests, or complexity_report separately if preflight covers your need."""
+    """Pre-change safety check. Call this BEFORE modifying any symbol or file.
+
+    Combines blast radius, affected tests, complexity, coupling, and
+    fitness violations in one call. Replaces 5-6 separate tool calls.
+    Do NOT call context, impact, affected_tests, or complexity_report
+    separately if preflight covers your need."""
     args = ["preflight"]
     if target:
         args.append(target)
@@ -189,13 +205,25 @@ def preflight(target: str = "", staged: bool = False, root: str = ".") -> dict:
 
 @_tool(name="roam_search_symbol")
 def search_symbol(query: str, root: str = ".") -> dict:
-    """Find symbols by name (case-insensitive substring match). Call this when you know part of a symbol name and need the exact qualified name, file location, or kind. Use before context or impact to get the correct identifier. Do NOT use Grep for function definitions -- this is faster and returns structured data with PageRank importance."""
+    """Find symbols by name (case-insensitive substring match).
+
+    Call this when you know part of a symbol name and need the exact
+    qualified name, file location, or kind. Use before context or impact
+    to get the correct identifier. Do NOT use Grep for function
+    definitions -- this is faster and returns structured data with
+    PageRank importance."""
     return _run_roam(["search", query], root)
 
 
 @_tool(name="roam_context")
 def context(symbol: str, task: str = "", root: str = ".") -> dict:
-    """Get the minimal context needed to work with a specific symbol. Call this when you need to understand or modify a function, class, or method. Returns exact files and line ranges to read. More targeted than understand. For pre-change safety checks, prefer preflight instead (includes context plus blast radius and tests)."""
+    """Get the minimal context needed to work with a specific symbol.
+
+    Call this when you need to understand or modify a function, class,
+    or method. Returns exact files and line ranges to read. More targeted
+    than understand. 'task' tailors output: "refactor", "debug", "extend",
+    "review", or "understand". For pre-change safety checks, prefer
+    preflight instead (includes context plus blast radius and tests)."""
     args = ["context", symbol]
     if task:
         args.extend(["--task", task])
@@ -204,19 +232,31 @@ def context(symbol: str, task: str = "", root: str = ".") -> dict:
 
 @_tool(name="roam_trace")
 def trace(source: str, target: str, root: str = ".") -> dict:
-    """Find the shortest dependency path between two symbols. Call this to understand HOW a change in one symbol could affect another. Shows path hops with symbol names, edge types, locations, and coupling strength."""
+    """Find the shortest dependency path between two symbols.
+
+    Call this to understand HOW a change in one symbol could affect
+    another. Shows path hops with symbol names, edge types, locations,
+    and coupling strength."""
     return _run_roam(["trace", source, target], root)
 
 
 @_tool(name="roam_impact")
 def impact(symbol: str, root: str = ".") -> dict:
-    """Show the blast radius of changing a symbol -- everything that would break if its signature or behavior changed. Affected symbols by hop distance, affected files, severity. For pre-change checks, prefer preflight (includes impact plus tests and fitness)."""
+    """Show the blast radius of changing a symbol.
+
+    Everything that would break if its signature or behavior changed.
+    Affected symbols by hop distance, affected files, severity. For
+    pre-change checks, prefer preflight (includes impact plus tests
+    and fitness)."""
     return _run_roam(["impact", symbol], root)
 
 
 @_tool(name="roam_file_info")
 def file_info(path: str, root: str = ".") -> dict:
-    """Show a file skeleton: every symbol definition with its signature. Call this to understand what a file contains without reading the full source. More useful than Read for getting a file overview."""
+    """Show a file skeleton: every symbol definition with its signature.
+
+    Call this to understand what a file contains without reading the
+    full source. More useful than Read for getting a file overview."""
     return _run_roam(["file", path], root)
 
 
@@ -227,7 +267,11 @@ def file_info(path: str, root: str = ".") -> dict:
 
 @_tool(name="roam_pr_risk")
 def pr_risk(staged: bool = False, root: str = ".") -> dict:
-    """Compute a risk score (0-100) for pending changes. Call this before committing or creating a PR. Produces LOW/MODERATE/HIGH/CRITICAL rating with per-file breakdown, risk factors, and suggested reviewers."""
+    """Compute a risk score (0-100) for pending changes.
+
+    Call this before committing or creating a PR. Produces LOW/MODERATE/
+    HIGH/CRITICAL rating with per-file breakdown, risk factors, and
+    suggested reviewers."""
     args = ["pr-risk"]
     if staged:
         args.append("--staged")
@@ -256,7 +300,12 @@ def breaking_changes(target: str = "HEAD~1", root: str = ".") -> dict:
 
 @_tool(name="roam_affected_tests")
 def affected_tests(target: str = "", staged: bool = False, root: str = ".") -> dict:
-    """Find test files that exercise changed code. Call this to know which tests to run after making changes. Walks reverse dependency edges from changed code to find test files. For a full pre-change check, prefer preflight (includes affected tests plus blast radius and fitness)."""
+    """Find test files that exercise changed code.
+
+    Call this to know which tests to run after making changes. Walks
+    reverse dependency edges from changed code to find test files. For
+    a full pre-change check, prefer preflight (includes affected tests
+    plus blast radius and fitness)."""
     args = ["affected-tests"]
     if target:
         args.append(target)
@@ -321,13 +370,21 @@ def dark_matter(min_npmi: float = 0.3, min_cochanges: int = 3, root: str = ".") 
 
 @_tool(name="roam_dead_code")
 def dead_code(root: str = ".") -> dict:
-    """List unreferenced exported symbols (dead code candidates). Call this to find code that can be safely removed. Finds symbols with zero incoming edges, filtering out known entry points and framework lifecycle hooks. Includes safety verdict per symbol."""
+    """List unreferenced exported symbols (dead code candidates).
+
+    Call this to find code that can be safely removed. Finds symbols
+    with zero incoming edges, filtering out known entry points and
+    framework lifecycle hooks. Includes safety verdict per symbol."""
     return _run_roam(["dead"], root)
 
 
 @_tool(name="roam_complexity_report")
 def complexity_report(threshold: int = 15, root: str = ".") -> dict:
-    """Rank functions by cognitive complexity. Call this to find the most complex functions that should be refactored. For checking a single symbol, prefer context or preflight which include complexity data."""
+    """Rank functions by cognitive complexity.
+
+    Call this to find the most complex functions that should be
+    refactored. For checking a single symbol, prefer context or
+    preflight which include complexity data."""
     return _run_roam(["complexity", "--threshold", str(threshold)], root)
 
 
@@ -425,7 +482,12 @@ def visualize(
 
 @_tool(name="roam_diagnose")
 def diagnose(symbol: str, depth: int = 2, root: str = ".") -> dict:
-    """Root cause analysis for a failing symbol or test. Call this when debugging a bug or test failure to find the likely root cause. Ranks upstream/downstream suspects by risk (git churn, complexity, health, co-change entropy). Faster than manually tracing call chains. Returns verdict naming top suspect."""
+    """Root cause analysis for a failing symbol or test.
+
+    Call this when debugging a bug or test failure to find the likely
+    root cause. Ranks upstream/downstream suspects by risk (git churn,
+    complexity, health, co-change entropy). Faster than manually tracing
+    call chains. Returns verdict naming top suspect."""
     args = ["diagnose", symbol, "--depth", str(depth)]
     return _run_roam(args, root)
 
@@ -1432,7 +1494,11 @@ def search_semantic(query: str, top: int = 10, threshold: float = 0.05,
 
 @_tool(name="roam_diff")
 def roam_diff(commit_range: str = "", staged: bool = False, root: str = ".") -> dict:
-    """Blast radius of uncommitted or committed changes. Call this after making code changes to see what's affected BEFORE committing. Shows affected symbols, files, tests, coupling warnings, and fitness violations. For pre-PR analysis, use pr_risk instead."""
+    """Blast radius of uncommitted or committed changes.
+
+    Call this after making code changes to see what's affected BEFORE
+    committing. Shows affected symbols, files, tests, coupling warnings,
+    and fitness violations. For pre-PR analysis, use pr_risk instead."""
     args = ["diff"]
     if commit_range:
         args.append(commit_range)
@@ -1469,7 +1535,11 @@ def roam_symbol(name: str, full: bool = False, root: str = ".") -> dict:
 
 @_tool(name="roam_deps")
 def roam_deps(path: str, full: bool = False, root: str = ".") -> dict:
-    """File-level import/imported-by relationships. Call this to understand a file's dependencies -- what it imports and what imports it. Use for module boundary analysis and refactoring impact."""
+    """File-level import/imported-by relationships.
+
+    Call this to understand a file's dependencies -- what it imports
+    and what imports it. Use for module boundary analysis and
+    refactoring impact."""
     args = ["deps", path]
     if full:
         args.append("--full")
@@ -1478,7 +1548,10 @@ def roam_deps(path: str, full: bool = False, root: str = ".") -> dict:
 
 @_tool(name="roam_uses")
 def roam_uses(name: str, full: bool = False, root: str = ".") -> dict:
-    """All consumers of a symbol: callers, importers, inheritors grouped by edge type (calls, imports, inheritance, trait usage). Broader than impact. Use for planning API changes."""
+    """All consumers of a symbol: callers, importers, inheritors.
+
+    Grouped by edge type (calls, imports, inheritance, trait usage).
+    Broader than impact. Use for planning API changes."""
     args = ["uses", name]
     if full:
         args.append("--full")
