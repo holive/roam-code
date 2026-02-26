@@ -160,11 +160,6 @@ class TestQueryPerformance:
         assert rc == 0
         assert elapsed < QUERY_TIME_MS, f"file took {elapsed:.0f}ms"
 
-    def test_symbol_speed(self):
-        out, rc, elapsed = timed_roam("symbol", "Service0_0", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"symbol took {elapsed:.0f}ms"
-
     def test_search_speed(self):
         out, rc, elapsed = timed_roam("search", "Service", cwd=self.proj)
         assert rc == 0
@@ -200,11 +195,6 @@ class TestQueryPerformance:
         assert rc == 0
         assert elapsed < QUERY_TIME_MS, f"weather took {elapsed:.0f}ms"
 
-    def test_grep_speed(self):
-        out, rc, elapsed = timed_roam("grep", "method_0", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"grep took {elapsed:.0f}ms"
-
     def test_uses_speed(self):
         out, rc, elapsed = timed_roam("uses", "Service0_0", cwd=self.proj)
         assert rc == 0
@@ -215,15 +205,6 @@ class TestQueryPerformance:
         assert rc == 0
         assert elapsed < QUERY_TIME_MS, f"impact took {elapsed:.0f}ms"
 
-    def test_fan_speed(self):
-        out, rc, elapsed = timed_roam("fan", "symbol", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"fan took {elapsed:.0f}ms"
-
-    def test_coupling_speed(self):
-        out, rc, elapsed = timed_roam("coupling", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"coupling took {elapsed:.0f}ms"
 
 
 # ============================================================================
@@ -231,7 +212,7 @@ class TestQueryPerformance:
 # ============================================================================
 
 class TestNewCommandPerformance:
-    """Benchmarks for commands added in v5 (understand, coverage-gaps, report, etc.)."""
+    """Benchmarks for commands added in v5 (understand, coverage-gaps, etc.)."""
 
     @pytest.fixture(autouse=True)
     def ensure_indexed(self, medium_project):
@@ -260,36 +241,6 @@ class TestNewCommandPerformance:
         assert rc == 0
         assert elapsed < QUERY_TIME_MS, f"dead --by-kind took {elapsed:.0f}ms"
 
-    def test_coverage_gaps_speed(self):
-        out, rc, elapsed = timed_roam(
-            "coverage-gaps", "--gate-pattern", "auth|permission",
-            cwd=self.proj,
-        )
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"coverage-gaps took {elapsed:.0f}ms"
-
-    def test_snapshot_speed(self):
-        out, rc, elapsed = timed_roam("snapshot", "--tag", "bench", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"snapshot took {elapsed:.0f}ms"
-
-    def test_trend_speed(self):
-        # Ensure at least one snapshot exists
-        roam("snapshot", cwd=self.proj)
-        out, rc, elapsed = timed_roam("trend", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"trend took {elapsed:.0f}ms"
-
-    def test_trend_assert_speed(self):
-        roam("snapshot", cwd=self.proj)
-        out, rc, elapsed = timed_roam("trend", "--assert", "cycles<=100", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"trend --assert took {elapsed:.0f}ms"
-
-    def test_report_list_speed(self):
-        out, rc, elapsed = timed_roam("report", "--list", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < QUERY_TIME_MS, f"report --list took {elapsed:.0f}ms"
 
 
 # ============================================================================
@@ -379,11 +330,6 @@ class TestSelfBenchmark:
         out, rc, elapsed = timed_roam("dead", cwd=self.proj)
         assert rc == 0
         print(f"  dead: {elapsed:.0f}ms")
-
-    def test_self_coupling(self):
-        out, rc, elapsed = timed_roam("coupling", cwd=self.proj)
-        assert rc == 0
-        print(f"  coupling: {elapsed:.0f}ms")
 
     def test_self_weather(self):
         out, rc, elapsed = timed_roam("weather", cwd=self.proj)
@@ -709,11 +655,6 @@ class TestOutputCorrectness:
         # Signature should include parameter names
         assert "a" in out and "b" in out
 
-    def test_symbol_shows_location(self, verified_project):
-        """roam symbol should show file location."""
-        out, _ = roam("symbol", "Calculator", cwd=verified_project)
-        assert "calculator.py" in out
-
     def test_deps_shows_imports(self, verified_project):
         """roam deps should show import relationships."""
         out, _ = roam("deps", "calculator.py", cwd=verified_project)
@@ -748,14 +689,6 @@ class TestOutputCorrectness:
         # Should show entry points (file paths) or top symbols
         assert "app.py" in out or "Calculator" in out or "main" in out
 
-    def test_module_lists_directory(self, verified_project):
-        """roam module . should list root files."""
-        out, rc = roam("module", ".", cwd=verified_project)
-        assert rc == 0
-        assert "math_utils.py" in out or "calculator.py" in out or "app.py" in out
-
-    # --- New v2 command tests ---
-
     def test_impact_shows_dependents(self, verified_project):
         """roam impact should show blast radius for a symbol."""
         out, rc = roam("impact", "add", cwd=verified_project)
@@ -766,40 +699,6 @@ class TestOutputCorrectness:
         """roam impact should fail gracefully for unknown symbols."""
         out, rc = roam("impact", "nonexistent_xyz_123", cwd=verified_project)
         assert rc != 0 or "not found" in out.lower()
-
-    def test_owner_shows_ownership(self, verified_project):
-        """roam owner should show code ownership for a file."""
-        out, rc = roam("owner", "math_utils.py", cwd=verified_project)
-        assert rc == 0
-        # Should show author info or "no blame data"
-        assert "author" in out.lower() or "blame" in out.lower() or "Test" in out or "Fragmentation" in out
-
-    def test_coupling_shows_cochange(self, verified_project):
-        """roam coupling should show temporal coupling data."""
-        out, rc = roam("coupling", cwd=verified_project)
-        assert rc == 0
-        # May have co-change data or not depending on git history
-        assert "co-change" in out.lower() or "coupling" in out.lower() or "No co-change" in out
-
-    def test_fan_symbol_mode(self, verified_project):
-        """roam fan symbol should show fan-in/fan-out metrics."""
-        out, rc = roam("fan", "symbol", cwd=verified_project)
-        assert rc == 0
-        assert "fan-in" in out.lower() or "Fan-in" in out or "No graph metrics" in out
-
-    def test_fan_file_mode(self, verified_project):
-        """roam fan file should show file-level fan metrics."""
-        out, rc = roam("fan", "file", cwd=verified_project)
-        assert rc == 0
-        assert "fan-in" in out.lower() or "Fan-in" in out or "No file edges" in out
-
-    # --- --full flag tests ---
-
-    def test_symbol_full_flag(self, verified_project):
-        """roam symbol --full should show all callers/callees."""
-        out, rc = roam("symbol", "--full", "Calculator", cwd=verified_project)
-        assert rc == 0
-        assert "calculator.py" in out
 
     def test_search_full_flag(self, verified_project):
         """roam search --full should show all results."""
@@ -837,12 +736,6 @@ class TestV6CommandPerformance:
         assert rc == 0
         assert elapsed < 3000
 
-    def test_conventions_speed(self):
-        """roam conventions should complete within 3s."""
-        out, rc, elapsed = timed_roam("conventions", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < 3000, f"conventions took {elapsed:.0f}ms (limit 3000ms)"
-
     def test_debt_speed(self):
         """roam debt should complete within 3s."""
         out, rc, elapsed = timed_roam("debt", cwd=self.proj)
@@ -852,18 +745,6 @@ class TestV6CommandPerformance:
     def test_entry_points_speed(self):
         """roam entry-points should complete within 3s."""
         out, rc, elapsed = timed_roam("entry-points", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < 3000
-
-    def test_patterns_speed(self):
-        """roam patterns should complete within 5s."""
-        out, rc, elapsed = timed_roam("patterns", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < 5000
-
-    def test_alerts_speed(self):
-        """roam alerts should complete within 3s."""
-        out, rc, elapsed = timed_roam("alerts", cwd=self.proj)
         assert rc == 0
         assert elapsed < 3000
 
@@ -890,12 +771,6 @@ class TestV6CommandPerformance:
         out, rc, elapsed = timed_roam("understand", cwd=self.proj)
         assert rc == 0
         assert elapsed < 5000, f"understand took {elapsed:.0f}ms (limit 5000ms)"
-
-    def test_describe_enhanced_speed(self):
-        """Enhanced describe should complete within 5s."""
-        out, rc, elapsed = timed_roam("describe", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < 5000
 
 
 class TestV6JsonPerformance:
@@ -932,19 +807,10 @@ class TestV6JsonPerformance:
         assert data["command"] == "preflight"
         assert "risk_level" in data["summary"]
 
-    def test_json_conventions(self):
-        out, rc, elapsed = timed_roam("--json", "conventions", cwd=self.proj)
-        assert rc == 0
-        assert elapsed < 3000
-        import json
-        data = json.loads(out)
-        assert data["command"] == "conventions"
-
     def test_json_understand_enhanced(self):
         out, rc, elapsed = timed_roam("--json", "understand", cwd=self.proj)
         assert rc == 0
         assert elapsed < 5000
         import json
         data = json.loads(out)
-        assert "conventions" in data
         assert "complexity" in data or "complexity" in str(data)

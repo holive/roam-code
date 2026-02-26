@@ -7,12 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **MCP:** reduced MCP tools from 30 to 23 by removing 7 tool wrappers for low-frequency commands (CLI commands remain available): `roam_init`, `roam_reindex`, `roam_visualize`, `roam_endpoints`, `roam_affected`, `roam_debt`, `roam_weather`
+- **MCP:** renamed `roam_diagnose_issue` compound tool to `roam_diagnose` to match CLI command name; removed redundant single-purpose `roam_diagnose` tool (30 MCP tools total, down from 31)
+
+### Removed
+- ~100 CLI commands trimmed to focus on core agent comprehension (137 -> 37 commands)
+- **Security subsystem:** `secrets`, `auth-gaps`, `supply-chain`, `vuln-map`, `vuln-reach`, `vulns` commands and `src/roam/security/` module
+- **Runtime/trace subsystem:** `ingest-trace`, `hotspots` commands and `src/roam/runtime/` module
+- **Refactoring engine:** `mutate`, `plan-refactor`, `suggest-refactoring` commands and `src/roam/refactor/` module
+- **Team analytics:** `bus-factor`, `simulate-departure`, `dev-profile`, `suggest-reviewers`, `owner`, `codeowners`, `ai-ratio`
+- **CI enforcement:** `guard`, `fitness`, `check-rules`, `rules`, `alerts`, `verify`, `verify-imports`, `snapshot`
+- **Forecasting/simulation:** `forecast`, `simulate`, `fingerprint`, `bisect`
+- **Documentation analysis:** `doc-staleness`, `docs-coverage`, `intent`
+- **API monitoring:** `api-drift`, `api-changes`, `breaking`, `orphan-routes`
+- **DB-specific detectors:** `n1`, `over-fetch`, `missing-index`, `migration-safety`
+- **Overlapping overview commands:** `dashboard`, `tour`, `minimap`, `onboard`, `describe`
+- **Overlapping reporting:** `report`, `digest`, `vibe-check`
+- **Overlapping health sub-scores:** `smells`, `ai-readiness`, `trend`, `trends`
+- **Overlapping exploration:** `symbol`, `module`, `metrics`, `fan`, `relate`, `grep`
+- **Niche/specialized commands:** `sketch`, `why`, `closure`, `invariants`, `conventions`, `attest`, `annotate`, `plan`, `adversarial`, `capsule`, `agent-export`, `agent-plan`, `agent-context`, `semantic-diff`, `test-gaps`, `risk`, `drift`, `coverage-gaps`, `path-coverage`, `budget`, `spectral`, `coupling`, `dark-matter`, `orchestrate`, `partition`, `safe-zones`, `patterns`, `xlang`, `duplicates`, `safe-delete`, `split`, `fn-coupling`, `testmap`, `watch`, `hooks`
+- **Niche graph algorithms:** anomaly detection, spectral analysis, dark matter, partition, simulation, fingerprint, propagation
+- **Languages:** Salesforce ecosystem (Apex, Aura, Visualforce, SF XML), FoxPro
+- **Bridges:** Salesforce bridge, Protobuf bridge
+- **Output formats:** SARIF output, schema registry
+- **Search:** ONNX embeddings, framework packs, `search-semantic` command
+- **Other:** gate presets, MCP preset system (all tools now always exposed), `roam_expand_toolset` meta-tool
+- **MCP tools:** `roam_syntax_check` (redundant with real linters), `roam_reset` (bash equivalent: `rm .roam/index.db && roam init`), `roam_clean` (rarely needed), `roam_deps` (modest value-add over grep)
+- MCP tools reduced from 101 to 31 (CLI commands remain unchanged)
+- ~120 test files deleted
+
+### Changed
+- Cleaned dead imports from `bridges/registry.py` (removed salesforce/protobuf bridge references)
+- Cleaned dead imports from `search/index_embeddings.py` (stubbed ONNX/framework-pack references)
+- MCP server simplified: single preset, all tools always exposed
+
 ## [11.0.0] - 2026-02-25
 
 ### Added
 - **MCP v2 Overhaul:**
   - In-process MCP execution via CliRunner -- eliminates subprocess overhead (#1)
-  - 4 compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose_issue` -- each replaces 2-4 tool calls (#2)
+  - 4 compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose` -- each replaces 2-4 tool calls (#2)
   - 6 MCP tool presets: core (20 tools), review, refactor, debug, architecture, full (65 tools) via `ROAM_MCP_PRESET` env var (#3)
   - Structured return schemas (`output_schema`) on all 65 MCP tools (#4)
   - `roam_expand_toolset` meta-tool for dynamic mid-session preset switching (#6)

@@ -74,7 +74,7 @@ def test_help():
     output, rc = roam("--help")
     assert rc == 0
     # The categorized help should show at least one category
-    assert "Getting Started" in output or "Codebase Health" in output
+    assert "Setup" in output or "Quality" in output
     # And the usage line
     assert "Usage" in output or "usage" in output.lower()
 
@@ -82,9 +82,9 @@ def test_help():
 # ── 3. Per-command help ─────────────────────────────────────────────
 
 _HELP_COMMANDS = [
-    "index", "health", "map", "dead", "search", "grep",
-    "weather", "clusters", "layers", "trend", "snapshot",
-    "diff", "describe", "deps", "file", "symbol",
+    "index", "health", "map", "dead", "search",
+    "weather", "clusters", "layers",
+    "diff", "deps", "file",
 ]
 
 

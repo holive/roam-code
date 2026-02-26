@@ -139,7 +139,6 @@ def _load_gate_config() -> dict:
 def health(ctx, no_framework, gate):
     """Show code health: cycles, god components, bottlenecks."""
     json_mode = ctx.obj.get('json') if ctx.obj else False
-    sarif_mode = ctx.obj.get('sarif') if ctx.obj else False
     token_budget = ctx.obj.get('budget', 0) if ctx.obj else 0
     detail = ctx.obj.get('detail', False) if ctx.obj else False
     ensure_index()
@@ -457,53 +456,6 @@ def health(ctx, no_framework, gate):
                 click.echo(f"\nFailed gates: {', '.join(failed)}")
                 from roam.exit_codes import GateFailureError
                 raise GateFailureError(f"Quality gate failed: {', '.join(failed)}")
-            return
-
-        if sarif_mode:
-            from roam.output.sarif import health_to_sarif, write_sarif
-            issues = {
-                "cycles": [
-                    {
-                        "size": c["size"],
-                        "severity": c.get("severity", "WARNING"),
-                        "symbols": [s["name"] for s in c["symbols"]],
-                        "files": c["files"],
-                    }
-                    for c in formatted_cycles
-                ],
-                "god_components": [
-                    {
-                        "name": g["name"],
-                        "kind": g["kind"],
-                        "degree": g["degree"],
-                        "file": g["file"],
-                        "severity": g.get("severity", "WARNING"),
-                    }
-                    for g in god_items
-                ],
-                "bottlenecks": [
-                    {
-                        "name": b["name"],
-                        "kind": b["kind"],
-                        "betweenness": b["betweenness"],
-                        "file": b["file"],
-                        "severity": b.get("severity", "WARNING"),
-                    }
-                    for b in bn_items
-                ],
-                "layer_violations": [
-                    {
-                        "severity": "WARNING",
-                        "source": v_lookup.get(v["source"], {}).get("name", "?"),
-                        "source_layer": v["source_layer"],
-                        "target": v_lookup.get(v["target"], {}).get("name", "?"),
-                        "target_layer": v["target_layer"],
-                    }
-                    for v in violations
-                ],
-            }
-            sarif = health_to_sarif(issues)
-            click.echo(write_sarif(sarif))
             return
 
         if json_mode:

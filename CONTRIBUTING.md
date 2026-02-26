@@ -84,9 +84,7 @@ repos:
   - repo: https://github.com/Cranot/roam-code
     rev: v10.0.1          # pin to a release tag
     hooks:
-      - id: roam-secrets        # secret scanning -- no index required
       - id: roam-syntax-check   # tree-sitter syntax validation -- no index required
-      - id: roam-verify         # convention consistency check
       - id: roam-health         # composite health score (informational)
 ```
 
@@ -94,28 +92,18 @@ Available hook IDs and what they do:
 
 | Hook ID | Command | Fails on | Index required? |
 |---|---|---|---|
-| `roam-secrets` | `roam secrets --fail-on-found` | Any secret found | No |
 | `roam-syntax-check` | `roam syntax-check --changed` | Syntax errors | No |
-| `roam-verify` | `roam verify --changed` | Score < 70 | Yes (auto-init) |
 | `roam-health` | `roam health` | Never (informational) | Yes (auto-init) |
-| `roam-vibe-check` | `roam vibe-check` | Never by default | Yes (auto-init) |
 
 Notes:
-- `roam-secrets` and `roam-syntax-check` operate directly on files and work
-  without a pre-existing roam index.
-- `roam-verify`, `roam-health`, and `roam-vibe-check` call `ensure_index()`
-  internally and will auto-index the project on first run (equivalent to
-  `roam init`).
+- `roam-syntax-check` operates directly on files and works without a
+  pre-existing roam index.
+- `roam-health` calls `ensure_index()` internally and will auto-index the
+  project on first run (equivalent to `roam init`).
 - All hooks use `pass_filenames: false` and `always_run: true` because roam
   operates on the whole repository rather than individual files.
 - To enforce a health threshold in CI, use the `gate` input of the
   [GitHub Action](docs/ci-integration.md) rather than `roam-health` alone.
-- To enable the `--threshold` gate on `roam-vibe-check`, override the hook
-  args in your config:
-  ```yaml
-  - id: roam-vibe-check
-    args: ['--threshold', '50']
-  ```
 
 ## How to Contribute
 
@@ -221,9 +209,9 @@ roam-code is organized into these key areas:
 | `src/roam/languages/` | One `*_lang.py` per language, inheriting `LanguageExtractor` |
 | `src/roam/graph/` | NetworkX graph algorithms (PageRank, SCC, clustering, layers) |
 | `src/roam/bridges/` | Cross-language symbol resolution |
-| `src/roam/output/` | Formatting, JSON envelopes, SARIF output |
-| `src/roam/mcp_server.py` | MCP server with 61 tools |
-| `tests/` | Test suite (71 test files) |
+| `src/roam/output/` | Formatting, JSON envelopes |
+| `src/roam/mcp_server.py` | MCP server with 23 tools |
+| `tests/` | Test suite (42 test files) |
 
 For full architectural details, see [CLAUDE.md](CLAUDE.md).
 
@@ -232,7 +220,6 @@ For full architectural details, see [CLAUDE.md](CLAUDE.md).
 - Add a Tier 1 language extractor (see `go_lang.py` or `php_lang.py` as templates)
 - Improve reference resolution for an existing language
 - Add benchmark repos to the test suite
-- Extend SARIF converters
 - Add MCP tool wrappers for existing commands
 - Improve documentation
 

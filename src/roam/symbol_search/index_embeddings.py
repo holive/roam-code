@@ -7,8 +7,7 @@ import math
 import re
 from typing import Any
 
-from roam.search.framework_packs import search_pack_symbols
-from roam.search.tfidf import tokenize, cosine_similarity
+from roam.symbol_search.tfidf import tokenize, cosine_similarity
 
 
 # ---------------------------------------------------------------------------
@@ -76,24 +75,21 @@ def onnx_populated(conn) -> bool:
 
 
 def _load_semantic_settings(project_root=None) -> dict[str, Any]:
-    """Load semantic backend settings with env-over-config precedence."""
-    from roam.search.onnx_embeddings import load_semantic_settings
-
-    return load_semantic_settings(project_root=project_root)
+    """Load semantic backend settings with env-over-config precedence (stub)."""
+    # onnx_embeddings module removed - return empty settings
+    return {}
 
 
 def _onnx_ready(project_root=None, settings=None):
-    """Return ONNX backend readiness status."""
-    from roam.search.onnx_embeddings import onnx_ready
-
-    return onnx_ready(project_root=project_root, settings=settings)
+    """Return ONNX backend readiness status (stub)."""
+    # onnx_embeddings module removed - always return not ready
+    return (False, "onnx-module-removed", {})
 
 
 def _get_onnx_embedder(project_root=None, settings=None):
-    """Return ONNX embedder if backend is configured and dependencies are present."""
-    from roam.search.onnx_embeddings import get_onnx_embedder
-
-    return get_onnx_embedder(project_root=project_root, settings=settings)
+    """Return ONNX embedder if backend is configured and dependencies are present (stub)."""
+    # onnx_embeddings module removed - always return None
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -405,21 +401,8 @@ def search_stored(
         top_k=candidate_k,
     )
 
-    # Optional pre-indexed framework/library packs (#96).
-    if include_packs:
-        try:
-            pack_results = search_pack_symbols(query, top_k=candidate_k, packs=packs)
-        except Exception:
-            pack_results = []
-        if pack_results:
-            semantic_results = sorted(
-                semantic_results + pack_results,
-                key=lambda r: (
-                    -r.get("score", 0.0),
-                    r.get("name", ""),
-                    r.get("symbol_id", 0),
-                ),
-            )[:candidate_k]
+    # optional pre-indexed framework/library packs (#96) - disabled (module removed)
+    # framework_packs module was removed in v11 cleanup
 
     # Hybrid fusion when both signals exist.
     if lexical_results and semantic_results:
@@ -456,7 +439,7 @@ def build_and_store_tfidf(conn):
 
     Called during ``roam index`` as part of hybrid search index build.
     """
-    from roam.search.tfidf import build_corpus
+    from roam.symbol_search.tfidf import build_corpus
 
     ensure_tfidf_table(conn)
 
@@ -497,60 +480,9 @@ def _build_symbol_embedding_text(row) -> str:
 
 
 def build_and_store_onnx_embeddings(conn, project_root=None) -> dict[str, Any]:
-    """Compute dense ONNX vectors for symbols and store in symbol_embeddings."""
-    settings = _load_semantic_settings(project_root=project_root)
-    ready, reason, settings = _onnx_ready(project_root=project_root, settings=settings)
-    if not ready:
-        return {"enabled": False, "reason": reason}
-
-    embedder = _get_onnx_embedder(project_root=project_root, settings=settings)
-    if embedder is None:
-        return {"enabled": False, "reason": "embedder-unavailable"}
-
-    rows = conn.execute(
-        "SELECT id, name, qualified_name, signature, kind, docstring FROM symbols"
-    ).fetchall()
-    if not rows:
-        return {"enabled": True, "stored": 0, "dims": 0}
-
-    texts = [_build_symbol_embedding_text(row) for row in rows]
-    vectors = embedder.embed_texts(texts)
-    if not vectors:
-        return {"enabled": True, "stored": 0, "dims": 0}
-
-    count = min(len(rows), len(vectors))
-    dims = len(vectors[0]) if vectors and vectors[0] else 0
-    model_id = getattr(embedder, "model_id", "onnx-model")
-
-    conn.execute("DELETE FROM symbol_embeddings WHERE provider='onnx'")
-    batch = []
-    for idx in range(count):
-        sid = rows[idx]["id"]
-        vec = vectors[idx]
-        batch.append((sid, json.dumps(vec), dims, "onnx", model_id))
-        if len(batch) >= 250:
-            conn.executemany(
-                "INSERT OR REPLACE INTO symbol_embeddings "
-                "(symbol_id, vector, dims, provider, model_id) "
-                "VALUES (?, ?, ?, ?, ?)",
-                batch,
-            )
-            batch.clear()
-
-    if batch:
-        conn.executemany(
-            "INSERT OR REPLACE INTO symbol_embeddings "
-            "(symbol_id, vector, dims, provider, model_id) "
-            "VALUES (?, ?, ?, ?, ?)",
-            batch,
-        )
-
-    return {
-        "enabled": True,
-        "stored": count,
-        "dims": dims,
-        "model_id": model_id,
-    }
+    """Compute dense ONNX vectors for symbols and store in symbol_embeddings (stub)."""
+    # onnx_embeddings module removed - return disabled status
+    return {"enabled": False, "reason": "onnx-module-removed"}
 
 
 def load_onnx_vectors(conn) -> dict[int, list[float]]:

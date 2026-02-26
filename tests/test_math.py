@@ -1276,7 +1276,6 @@ class TestAlgoRicher:
         finding = findings[0]
         assert "evidence" in finding
         assert "evidence_path" in finding
-        assert finding.get("fix", "") != ""
 
     def test_detector_metadata_and_impact_score(self, project_factory, monkeypatch):
         proj = project_factory({
@@ -1328,35 +1327,3 @@ class TestAlgoRicher:
             assert hit["confidence"] != "high"
             assert "guard_hints" in hit.get("evidence", {})
 
-    def test_algo_sarif_contains_fingerprint_codeflow_and_fix(
-        self, project_factory, monkeypatch
-    ):
-        proj = project_factory({
-            "fetcher.py": (
-                "import requests\n"
-                "def fetch_users(urls):\n"
-                "    out = []\n"
-                "    for url in urls:\n"
-                "        out.append(requests.get(url))\n"
-                "    return out\n"
-            ),
-        })
-        monkeypatch.chdir(proj)
-        runner = CliRunner()
-        result = invoke_cli(
-            runner,
-            ["--sarif", "algo", "--task", "io-in-loop"],
-            cwd=proj,
-        )
-        assert result.exit_code == 0, result.output
-        data = json.loads(result.output)
-        assert data.get("version") == "2.1.0"
-        runs = data.get("runs", [])
-        assert runs
-        results = runs[0].get("results", [])
-        assert results
-        res = results[0]
-        assert "partialFingerprints" in res
-        assert "primaryLocationLineHash" in res["partialFingerprints"]
-        assert "codeFlows" in res
-        assert "fixes" in res

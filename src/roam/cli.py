@@ -15,157 +15,76 @@ import click
 
 # Lazy-loading command group: imports command modules only when invoked.
 # This avoids importing networkx (~500ms) on every CLI call.
-# Total: 137 invokable command names (136 canonical commands + 1 legacy alias).
-# If this changes, update README.md, CLAUDE.md, llms-install.md, and docs copy.
+# ~37 commands focused on agent codebase comprehension.
 _COMMANDS = {
-    "index":    ("roam.commands.cmd_index",    "index"),
-    "map":      ("roam.commands.cmd_map",      "map_cmd"),
-    "module":   ("roam.commands.cmd_module",   "module"),
-    "file":     ("roam.commands.cmd_file",     "file_cmd"),
-    "symbol":   ("roam.commands.cmd_symbol",   "symbol"),
-    "trace":    ("roam.commands.cmd_trace",    "trace"),
-    "deps":     ("roam.commands.cmd_deps",     "deps"),
-    "health":   ("roam.commands.cmd_health",   "health"),
-    "clusters": ("roam.commands.cmd_clusters", "clusters"),
-    "layers":   ("roam.commands.cmd_layers",   "layers"),
-    "weather":  ("roam.commands.cmd_weather",  "weather"),
-    "dead":     ("roam.commands.cmd_dead",     "dead"),
-    "search":   ("roam.commands.cmd_search",   "search"),
-    "grep":     ("roam.commands.cmd_grep",     "grep_cmd"),
-    "uses":     ("roam.commands.cmd_uses",     "uses"),
-    "impact":   ("roam.commands.cmd_impact",   "impact"),
-    "owner":    ("roam.commands.cmd_owner",    "owner"),
-    "coupling": ("roam.commands.cmd_coupling", "coupling"),
-    "fan":      ("roam.commands.cmd_fan",      "fan"),
-    "diff":     ("roam.commands.cmd_diff",     "diff_cmd"),
-    "describe": ("roam.commands.cmd_describe", "describe"),
-    "test-map": ("roam.commands.cmd_testmap",  "test_map"),
-    "sketch":   ("roam.commands.cmd_sketch",   "sketch"),
-    "context":     ("roam.commands.cmd_context",     "context"),
-    "safe-delete": ("roam.commands.cmd_safe_delete", "safe_delete"),
-    "pr-risk":     ("roam.commands.cmd_pr_risk",     "pr_risk"),
-    "split":       ("roam.commands.cmd_split",      "split"),
-    "risk":        ("roam.commands.cmd_risk",       "risk"),
-    "why":         ("roam.commands.cmd_why",        "why"),
-    "snapshot":    ("roam.commands.cmd_snapshot",   "snapshot"),
-    "trend":       ("roam.commands.cmd_trend",     "trend"),
-    "auth-gaps":     ("roam.commands.cmd_auth_gaps",     "auth_gaps_cmd"),
-    "coverage-gaps": ("roam.commands.cmd_coverage_gaps", "coverage_gaps"),
-    "report":      ("roam.commands.cmd_report",    "report"),
-    "understand":  ("roam.commands.cmd_understand", "understand"),
-    "onboard":     ("roam.commands.cmd_onboard",    "onboard"),
-    "affected-tests": ("roam.commands.cmd_affected_tests", "affected_tests"),
-    "complexity":  ("roam.commands.cmd_complexity",  "complexity"),
-    "debt":        ("roam.commands.cmd_debt",        "debt"),
-    "conventions": ("roam.commands.cmd_conventions", "conventions"),
-    "bus-factor":  ("roam.commands.cmd_bus_factor",  "bus_factor"),
-    "entry-points": ("roam.commands.cmd_entry_points", "entry_points"),
-    "breaking":    ("roam.commands.cmd_breaking",     "breaking"),
-    "safe-zones":  ("roam.commands.cmd_safe_zones",  "safe_zones"),
-    "doc-staleness": ("roam.commands.cmd_doc_staleness", "doc_staleness"),
-    "docs-coverage": ("roam.commands.cmd_docs_coverage", "docs_coverage"),
-    "suggest-refactoring": ("roam.commands.cmd_suggest_refactoring", "suggest_refactoring"),
-    "plan-refactor": ("roam.commands.cmd_plan_refactor", "plan_refactor"),
-    "fn-coupling":  ("roam.commands.cmd_fn_coupling",  "fn_coupling"),
-    "alerts":       ("roam.commands.cmd_alerts",       "alerts"),
-    "fitness":      ("roam.commands.cmd_fitness",      "fitness"),
-    "patterns":     ("roam.commands.cmd_patterns",     "patterns"),
-    "preflight":    ("roam.commands.cmd_preflight",    "preflight"),
-    "guard":        ("roam.commands.cmd_guard",        "guard"),
+    # setup
     "init":         ("roam.commands.cmd_init",         "init"),
-    "config":       ("roam.commands.cmd_config",       "config"),
-    "digest":       ("roam.commands.cmd_digest",       "digest"),
-    "tour":         ("roam.commands.cmd_tour",         "tour"),
-    "diagnose":     ("roam.commands.cmd_diagnose",     "diagnose"),
-    "ws":           ("roam.commands.cmd_ws",           "ws"),
-    "visualize":    ("roam.commands.cmd_visualize",    "visualize"),
-    "x-lang":       ("roam.commands.cmd_xlang",        "xlang"),
-    "algo":              ("roam.commands.cmd_math",             "math_cmd"),
-    "math":              ("roam.commands.cmd_math",             "math_cmd"),
-    "n1":                ("roam.commands.cmd_n1",               "n1_cmd"),
-    "minimap":           ("roam.commands.cmd_minimap",          "minimap"),
-    "migration-safety":  ("roam.commands.cmd_migration_safety", "migration_safety_cmd"),
-    "over-fetch":        ("roam.commands.cmd_over_fetch",       "over_fetch_cmd"),
-    "missing-index":     ("roam.commands.cmd_missing_index",    "missing_index_cmd"),
-    "orphan-routes":     ("roam.commands.cmd_orphan_routes",    "orphan_routes_cmd"),
-    "api-drift":         ("roam.commands.cmd_api_drift",        "api_drift_cmd"),
-    "annotate":          ("roam.commands.cmd_annotate",         "annotate"),
-    "annotations":       ("roam.commands.cmd_annotate",         "annotations"),
-    "dark-matter":       ("roam.commands.cmd_dark_matter",      "dark_matter"),
-    "pr-diff":           ("roam.commands.cmd_pr_diff",          "pr_diff"),
-    "budget":            ("roam.commands.cmd_budget",           "budget"),
-    "effects":           ("roam.commands.cmd_effects",          "effects"),
-    "attest":            ("roam.commands.cmd_attest",           "attest"),
-    "capsule":           ("roam.commands.cmd_capsule",          "capsule"),
-    "path-coverage":     ("roam.commands.cmd_path_coverage",    "path_coverage"),
-    "forecast":          ("roam.commands.cmd_forecast",         "forecast"),
-    "plan":              ("roam.commands.cmd_plan",             "plan"),
-    "adversarial":       ("roam.commands.cmd_adversarial",     "adversarial"),
-    "cut":               ("roam.commands.cmd_cut",             "cut"),
-    "invariants":        ("roam.commands.cmd_invariants",      "invariants"),
-    "bisect":            ("roam.commands.cmd_bisect",          "bisect"),
-    "intent":            ("roam.commands.cmd_intent",          "intent"),
-    "simulate":          ("roam.commands.cmd_simulate",       "simulate"),
-    "closure":           ("roam.commands.cmd_closure",        "closure"),
-    "rules":             ("roam.commands.cmd_rules",          "rules"),
-    "fingerprint":       ("roam.commands.cmd_fingerprint",   "fingerprint"),
-    "spectral":          ("roam.commands.cmd_spectral",       "spectral"),
-    "orchestrate":       ("roam.commands.cmd_orchestrate",    "orchestrate"),
-    "mutate":            ("roam.commands.cmd_mutate",         "mutate"),
-    "vuln-map":          ("roam.commands.cmd_vuln_map",       "vuln_map"),
-    "vuln-reach":        ("roam.commands.cmd_vuln_reach",     "vuln_reach"),
-    "ingest-trace":      ("roam.commands.cmd_ingest_trace",  "ingest_trace"),
-    "hotspots":          ("roam.commands.cmd_hotspots",      "hotspots"),
-    "schema":            ("roam.commands.cmd_schema",        "schema_cmd"),
-    "search-semantic":   ("roam.commands.cmd_search_semantic", "search_semantic"),
-    "relate":            ("roam.commands.cmd_relate",        "relate"),
-    "agent-export":      ("roam.commands.cmd_agent_export",  "agent_export"),
-    "agent-plan":        ("roam.commands.cmd_agent_plan",    "agent_plan"),
-    "agent-context":     ("roam.commands.cmd_agent_context", "agent_context"),
-    "syntax-check":      ("roam.commands.cmd_syntax_check",  "syntax_check"),
-    "vibe-check":        ("roam.commands.cmd_vibe_check",    "vibe_check"),
-    "ai-readiness":      ("roam.commands.cmd_ai_readiness",  "ai_readiness"),
-    "check-rules":       ("roam.commands.cmd_check_rules",  "check_rules"),
-    "codeowners":        ("roam.commands.cmd_codeowners",    "codeowners"),
-    "dashboard":         ("roam.commands.cmd_dashboard",     "dashboard"),
-    "drift":             ("roam.commands.cmd_drift",         "drift"),
-    "dev-profile":       ("roam.commands.cmd_dev_profile",   "dev_profile"),
-    "secrets":           ("roam.commands.cmd_secrets",       "secrets"),
-    "supply-chain":     ("roam.commands.cmd_supply_chain", "supply_chain"),
-    "simulate-departure": ("roam.commands.cmd_simulate_departure", "simulate_departure"),
-    "suggest-reviewers": ("roam.commands.cmd_suggest_reviewers", "suggest_reviewers"),
-    "verify":            ("roam.commands.cmd_verify",        "verify"),
-    "api-changes":       ("roam.commands.cmd_api_changes",   "api_changes"),
-    "test-gaps":         ("roam.commands.cmd_test_gaps",     "test_gaps"),
-    "ai-ratio":          ("roam.commands.cmd_ai_ratio",      "ai_ratio"),
-    "duplicates":        ("roam.commands.cmd_duplicates",    "duplicates"),
-    "partition":         ("roam.commands.cmd_partition",     "partition"),
-    "affected":          ("roam.commands.cmd_affected",      "affected"),
-    "semantic-diff":     ("roam.commands.cmd_semantic_diff", "semantic_diff"),
-    "trends":            ("roam.commands.cmd_trends",        "trends"),
-    "endpoints":         ("roam.commands.cmd_endpoints",     "endpoints"),
-    "watch":             ("roam.commands.cmd_watch",         "watch"),
-    "mcp":               ("roam.mcp_server",                 "mcp_cmd"),
-    "doctor":            ("roam.commands.cmd_doctor",        "doctor"),
-    "reset":             ("roam.commands.cmd_reset",         "reset"),
-    "clean":             ("roam.commands.cmd_clean",         "clean"),
-    "hooks":             ("roam.commands.cmd_hooks",         "hooks"),
-    "smells":            ("roam.commands.cmd_smells",        "smells"),
-    "mcp-setup":         ("roam.commands.cmd_mcp_setup",    "mcp_setup"),
-    "verify-imports":    ("roam.commands.cmd_verify_imports", "verify_imports_cmd"),
-    "vulns":             ("roam.commands.cmd_vulns",         "vulns"),
-    "metrics":           ("roam.commands.cmd_metrics",       "metrics"),
+    "index":        ("roam.commands.cmd_index",        "index"),
+    "reset":        ("roam.commands.cmd_reset",        "reset"),
+    "clean":        ("roam.commands.cmd_clean",         "clean"),
+    "config":       ("roam.commands.cmd_config",        "config"),
+    "doctor":       ("roam.commands.cmd_doctor",        "doctor"),
+    "mcp":          ("roam.mcp_server",                 "mcp_cmd"),
+    "mcp-setup":    ("roam.commands.cmd_mcp_setup",     "mcp_setup"),
+    # exploration
+    "search":       ("roam.commands.cmd_search",        "search"),
+    "file":         ("roam.commands.cmd_file",          "file_cmd"),
+    "trace":        ("roam.commands.cmd_trace",         "trace"),
+    "deps":         ("roam.commands.cmd_deps",          "deps"),
+    "uses":         ("roam.commands.cmd_uses",          "uses"),
+    "impact":       ("roam.commands.cmd_impact",        "impact"),
+    "endpoints":    ("roam.commands.cmd_endpoints",     "endpoints"),
+    "understand":   ("roam.commands.cmd_understand",    "understand"),
+    # workflow
+    "preflight":    ("roam.commands.cmd_preflight",     "preflight"),
+    "diff":         ("roam.commands.cmd_diff",          "diff_cmd"),
+    "affected-tests": ("roam.commands.cmd_affected_tests", "affected_tests"),
+    "affected":     ("roam.commands.cmd_affected",      "affected"),
+    "context":      ("roam.commands.cmd_context",       "context"),
+    "diagnose":     ("roam.commands.cmd_diagnose",      "diagnose"),
+    "pr-risk":      ("roam.commands.cmd_pr_risk",       "pr_risk"),
+    "pr-diff":      ("roam.commands.cmd_pr_diff",       "pr_diff"),
+    "syntax-check": ("roam.commands.cmd_syntax_check",  "syntax_check"),
+    # quality
+    "health":       ("roam.commands.cmd_health",        "health"),
+    "debt":         ("roam.commands.cmd_debt",          "debt"),
+    "complexity":   ("roam.commands.cmd_complexity",    "complexity"),
+    "dead":         ("roam.commands.cmd_dead",          "dead"),
+    "algo":         ("roam.commands.cmd_math",          "math_cmd"),
+    "math":         ("roam.commands.cmd_math",          "math_cmd"),
+    "weather":      ("roam.commands.cmd_weather",       "weather"),
+    # architecture
+    "map":          ("roam.commands.cmd_map",           "map_cmd"),
+    "layers":       ("roam.commands.cmd_layers",        "layers"),
+    "clusters":     ("roam.commands.cmd_clusters",      "clusters"),
+    "effects":      ("roam.commands.cmd_effects",       "effects"),
+    "entry-points": ("roam.commands.cmd_entry_points",  "entry_points"),
+    "visualize":    ("roam.commands.cmd_visualize",     "visualize"),
 }
 
 # Command categories for organized --help display
 _CATEGORIES = {
-    "Getting Started": ["index", "watch", "init", "hooks", "reset", "clean", "config", "doctor", "understand", "onboard", "dashboard", "tour", "describe", "minimap", "agent-export", "ws", "schema", "mcp", "mcp-setup"],
-    "Daily Workflow": ["preflight", "guard", "agent-plan", "agent-context", "pr-risk", "pr-diff", "api-changes", "semantic-diff", "test-gaps", "affected", "attest", "adversarial", "verify", "verify-imports", "diff", "context", "affected-tests", "diagnose", "digest", "annotate", "annotations", "plan", "syntax-check"],
-    "Codebase Health": ["health", "smells", "vibe-check", "ai-readiness", "check-rules", "ai-ratio", "trends", "weather", "debt", "complexity", "algo", "n1", "over-fetch", "missing-index", "alerts", "trend", "fitness", "snapshot", "forecast", "bisect", "ingest-trace", "hotspots"],
-    "Architecture": ["map", "layers", "clusters", "spectral", "coupling", "dark-matter", "effects", "cut", "simulate", "orchestrate", "partition", "entry-points", "patterns", "safe-zones", "visualize", "x-lang", "fingerprint"],
-    "Exploration": ["search", "search-semantic", "grep", "file", "symbol", "module", "trace", "deps", "uses", "fan", "impact", "relate", "endpoints", "metrics"],
-    "Reports & CI": ["report", "budget", "breaking", "coverage-gaps", "auth-gaps", "orphan-routes", "bus-factor", "simulate-departure", "suggest-reviewers", "dev-profile", "owner", "codeowners", "drift", "secrets", "supply-chain", "risk", "migration-safety", "api-drift", "path-coverage", "capsule", "rules", "vuln-map", "vuln-reach", "vulns"],
-    "Refactoring": ["dead", "duplicates", "safe-delete", "split", "fn-coupling", "doc-staleness", "docs-coverage", "suggest-refactoring", "plan-refactor", "conventions", "sketch", "test-map", "why", "pr-risk", "invariants", "intent", "closure", "mutate"],
+    "Setup": [
+        "init", "index", "reset", "clean", "config", "doctor",
+        "mcp", "mcp-setup",
+    ],
+    "Exploration": [
+        "search", "file", "trace", "deps", "uses", "impact",
+        "endpoints", "understand",
+    ],
+    "Workflow": [
+        "preflight", "diff", "affected-tests", "affected",
+        "context", "diagnose", "pr-risk", "pr-diff",
+        "syntax-check",
+    ],
+    "Quality": [
+        "health", "debt", "complexity", "dead", "algo",
+        "weather",
+    ],
+    "Architecture": [
+        "map", "layers", "clusters", "effects",
+        "entry-points", "visualize",
+    ],
 }
 
 _PLUGIN_COMMANDS_LOADED = False
@@ -236,10 +155,9 @@ class LazyGroup(click.Group):
         if self.help:
             formatter.write(self.help + "\n\n")
 
-        # Show categorized commands (first 4 categories = ~20 commands)
+        # Show all categories
         shown = set()
-        priority_cats = ["Getting Started", "Daily Workflow", "Codebase Health", "Architecture"]
-        for cat_name in priority_cats:
+        for cat_name in _CATEGORIES:
             cmds = _CATEGORIES.get(cat_name, [])
             valid_cmds = [c for c in cmds if c in _COMMANDS and c not in shown]
             if not valid_cmds:
@@ -358,15 +276,12 @@ def _check_gate(gate_expr: str, data: dict) -> bool:
 @click.option('--json', 'json_mode', is_flag=True, help='Output in JSON format')
 @click.option('--compact', is_flag=True, help='Compact output: TSV tables, minimal JSON envelope')
 @click.option('--agent', is_flag=True, help='Agent mode: compact JSON with 500-token default budget')
-@click.option('--sarif', 'sarif_mode', is_flag=True, help='Output in SARIF 2.1.0 format (for dead, health, complexity, rules, secrets, algo)')
 @click.option('--budget', type=int, default=0, help='Max output tokens (0=unlimited)')
 @click.option('--include-excluded', is_flag=True, help='Include files normally excluded by .roamignore / config / built-in patterns')
 @click.option('--detail', is_flag=True, help='Show full detailed output instead of compact summary')
 @click.pass_context
-def cli(ctx, json_mode, compact, agent, sarif_mode, budget, include_excluded, detail):
+def cli(ctx, json_mode, compact, agent, budget, include_excluded, detail):
     """Roam: Codebase comprehension tool."""
-    if agent and sarif_mode:
-        raise click.UsageError("--agent cannot be combined with --sarif")
 
     # Agent mode is optimized for CLI-invoked sub-agents:
     # - forces JSON for machine parsing
@@ -382,7 +297,6 @@ def cli(ctx, json_mode, compact, agent, sarif_mode, budget, include_excluded, de
     ctx.obj['json'] = json_mode
     ctx.obj['compact'] = compact
     ctx.obj['agent'] = agent
-    ctx.obj['sarif'] = sarif_mode
     ctx.obj['budget'] = budget
     ctx.obj['include_excluded'] = include_excluded
     ctx.obj['detail'] = detail

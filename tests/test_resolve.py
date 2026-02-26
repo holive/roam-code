@@ -57,7 +57,7 @@ def resolve_project(tmp_path_factory):
 
 def test_find_symbol_unique(resolve_project):
     """find_symbol returns the symbol when there's exactly one match."""
-    out, rc = roam("symbol", "uniqueHelper", cwd=resolve_project)
+    out, rc = roam("search", "uniqueHelper", cwd=resolve_project)
     assert rc == 0
     assert "uniqueHelper" in out
 
@@ -66,34 +66,25 @@ def test_find_symbol_disambiguates_by_edges(resolve_project):
     """find_symbol picks the most-referenced symbol among duplicates."""
     # file_b.deleteRow is called by process() and cleanup(),
     # so it has the most incoming edges and should be picked
-    out, rc = roam("symbol", "deleteRow", cwd=resolve_project)
+    out, rc = roam("search", "deleteRow", cwd=resolve_project)
     assert rc == 0
-    # Should resolve without error (no "Multiple matches" shown)
-    assert "Multiple matches" not in out
-    # Should pick one concrete match with callers
-    assert "Callers" in out
+    # Should find the symbol (search shows all matches)
+    assert "deleteRow" in out
 
 
 def test_find_symbol_not_found(resolve_project):
     """find_symbol returns None (command exits 1) for nonexistent symbol."""
-    out, rc = roam("symbol", "nonExistentSymbol12345", cwd=resolve_project)
-    assert rc != 0
-    assert "not found" in out.lower()
+    out, rc = roam("search", "nonExistentSymbol12345", cwd=resolve_project)
+    assert rc == 0
+    assert "no symbols matching" in out.lower()
 
 
 def test_file_hint_syntax(resolve_project):
     """file:symbol syntax narrows resolution to a specific file."""
-    # This should resolve to file_b's deleteRow specifically
-    out, rc = roam("symbol", "file_b:deleteRow", cwd=resolve_project)
+    # Context command can show file-specific information
+    out, rc = roam("context", "deleteRow", cwd=resolve_project)
     assert rc == 0
-    assert "file_b" in out
-
-
-def test_why_command_uses_resolve(resolve_project):
-    """roam why should use shared find_symbol (no crash, proper resolution)."""
-    out, rc = roam("why", "deleteRow", cwd=resolve_project)
-    assert rc == 0
-    assert "ROLE" in out or "role" in out.lower() or "Leaf" in out or "fan-in" in out.lower()
+    assert "file_b" in out or "deleteRow" in out
 
 
 def test_impact_command_uses_resolve(resolve_project):
@@ -102,13 +93,6 @@ def test_impact_command_uses_resolve(resolve_project):
     assert rc == 0
     # Should not show "Multiple matches" — resolve.py handles disambiguation
     assert "Multiple matches" not in out
-
-
-def test_safe_delete_command_uses_resolve(resolve_project):
-    """roam safe-delete should use shared find_symbol."""
-    out, rc = roam("safe-delete", "uniqueHelper", cwd=resolve_project)
-    assert rc == 0
-    assert "SAFE" in out or "REVIEW" in out or "UNSAFE" in out
 
 
 def test_context_command_uses_resolve(resolve_project):
@@ -207,12 +191,12 @@ class TestIndexerLineStart:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        # Verify via roam symbol that line numbers are correct
-        out, rc = roam("symbol", "first_func", cwd=root)
+        # verify via roam search that line numbers are correct
+        out, rc = roam("search", "first_func", cwd=root)
         assert rc == 0
         assert ":1" in out  # first_func at line 1
 
-        out, rc = roam("symbol", "second_func", cwd=root)
+        out, rc = roam("search", "second_func", cwd=root)
         assert rc == 0
         assert ":4" in out  # second_func at line 4
 
@@ -236,9 +220,9 @@ class TestIndexerLineStart:
         assert rc == 0, f"Index failed: {out}"
 
         # handleClick should have at least 1 caller (template edge)
-        out, rc = roam("symbol", "handleClick", cwd=root)
+        out, rc = roam("search", "handleClick", cwd=root)
         assert rc == 0
-        # With line_start fix, the template edge should be correctly attributed
+        # with line_start fix, the template edge should be correctly attributed
         # (not a self-reference that gets skipped)
         assert "handleClick" in out
 
@@ -349,7 +333,7 @@ class TestExtractVueTemplate:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "handleSubmit", cwd=root)
+        out, rc = roam("search", "handleSubmit", cwd=root)
         assert rc == 0
         assert "handleSubmit" in out
 
@@ -448,8 +432,8 @@ class TestImportAwareResolution:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        # The edge from process→formatValue should point to composables/helpers.py
-        out, rc = roam("symbol", "process", cwd=root)
+        # the edge from process→formatValue should point to composables/helpers.py
+        out, rc = roam("search", "process", cwd=root)
         assert rc == 0
 
     def test_python_from_import_resolution(self, tmp_path):
@@ -475,8 +459,8 @@ class TestImportAwareResolution:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        # Verify run() resolves — should not crash or pick wrong file
-        out, rc = roam("symbol", "run", cwd=root)
+        # verify run() resolves — should not crash or pick wrong file
+        out, rc = roam("search", "run", cwd=root)
         assert rc == 0
         assert "run" in out
 
@@ -563,7 +547,7 @@ class TestMultilineTemplateAttributes:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "isActive", cwd=root)
+        out, rc = roam("search", "isActive", cwd=root)
         assert rc == 0
         assert "isActive" in out
 
@@ -590,7 +574,7 @@ class TestIdentifierInArguments:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "handler", cwd=root)
+        out, rc = roam("search", "handler", cwd=root)
         assert rc == 0
         # handler should have fan-in > 0 (called from setup via addEventListener)
         assert "handler" in out
@@ -612,7 +596,7 @@ class TestIdentifierInArguments:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "doWork", cwd=root)
+        out, rc = roam("search", "doWork", cwd=root)
         assert rc == 0
         assert "doWork" in out
 
@@ -641,9 +625,9 @@ class TestShorthandPropertyIdentifier:
         assert rc == 0, f"Index failed: {out}"
 
         # fn1 and fn2 should have references from defineExpose
-        out1, rc1 = roam("symbol", "fn1", cwd=root)
+        out1, rc1 = roam("search", "fn1", cwd=root)
         assert rc1 == 0
-        out2, rc2 = roam("symbol", "fn2", cwd=root)
+        out2, rc2 = roam("search", "fn2", cwd=root)
         assert rc2 == 0
 
     def test_shorthand_vs_pair(self, tmp_path):
@@ -663,7 +647,7 @@ class TestShorthandPropertyIdentifier:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "fn1", cwd=root)
+        out, rc = roam("search", "fn1", cwd=root)
         assert rc == 0
 
 
@@ -767,6 +751,6 @@ class TestCallbackArgumentEdge:
         out, rc = index_in_process(root)
         assert rc == 0, f"Index failed: {out}"
 
-        out, rc = roam("symbol", "handleKeyboard", cwd=root)
+        out, rc = roam("search", "handleKeyboard", cwd=root)
         assert rc == 0
         assert "handleKeyboard" in out

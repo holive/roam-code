@@ -28,15 +28,7 @@ def _auto_discover():
     if _BRIDGES:
         return
 
-    # Import built-in bridges -- each registers itself on import
-    try:
-        from roam.bridges import bridge_salesforce  # noqa: F401
-    except ImportError:
-        pass
-    try:
-        from roam.bridges import bridge_protobuf  # noqa: F401
-    except ImportError:
-        pass
+    # import built-in bridges -- each registers itself on import
     try:
         from roam.bridges import bridge_rest_api  # noqa: F401
     except ImportError:

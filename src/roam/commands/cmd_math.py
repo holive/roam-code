@@ -10,7 +10,11 @@ from roam.db.connection import open_db
 from roam.output.formatter import abbrev_kind, to_json, json_envelope
 from roam.commands.resolve import ensure_index
 from roam.catalog.tasks import get_task, get_tip
-from roam.catalog.fixes import get_fix
+
+
+def get_fix(task_id: str, lang: str) -> str:
+    """Stub -- fix suggestions removed."""
+    return ""
 
 
 @click.command()
@@ -38,7 +42,6 @@ def math_cmd(ctx, task_filter, confidence_filter, profile, limit):
     Primary name: algo. Alias: math (backward compat).
     """
     json_mode = ctx.obj.get('json') if ctx.obj else False
-    sarif_mode = ctx.obj.get('sarif') if ctx.obj else False
     ensure_index()
 
     from roam.catalog.detectors import run_detectors
@@ -112,15 +115,6 @@ def math_cmd(ctx, task_filter, confidence_filter, profile, limit):
             f"({conf_str})"
             if total else "No algorithmic issues detected"
         )
-
-        if sarif_mode:
-            from roam.output.sarif import algo_to_sarif, write_sarif
-            sarif = algo_to_sarif(
-                findings,
-                detector_meta.get("detector_metadata", {}),
-            )
-            click.echo(write_sarif(sarif))
-            return
 
         # --- JSON output ---
         if json_mode:

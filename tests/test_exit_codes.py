@@ -229,68 +229,6 @@ class TestIndexMissingExitCode:
 
 
 # ===========================================================================
-# Test gate failure exit code in budget command
-# ===========================================================================
-
-class TestGateFailureExitCode:
-    """Verify that gate failure produces exit code 5."""
-
-    def test_budget_gate_failure(self, project_factory):
-        """Budget command with exceeded budgets should exit with code 5."""
-        from roam.exit_codes import EXIT_GATE_FAILURE
-
-        # Create a project with enough symbols to trigger budget failures
-        proj = project_factory({
-            "app.py": (
-                'def func_a():\n'
-                '    return 1\n'
-                '\n'
-                'def func_b():\n'
-                '    return func_a()\n'
-                '\n'
-                'def func_c():\n'
-                '    return func_b()\n'
-            ),
-        })
-
-        # Create a .roam/budgets.json with an impossible budget (max 0 symbols)
-        roam_dir = proj / ".roam"
-        roam_dir.mkdir(exist_ok=True)
-        import json
-        budgets = [
-            {
-                "name": "symbol_count",
-                "metric": "symbol_count",
-                "max_increase": 0,
-                "max_value": 1,
-            }
-        ]
-        (roam_dir / "budgets.json").write_text(json.dumps(budgets))
-
-        # Also need a snapshot for budget comparison
-        runner = CliRunner()
-        from roam.cli import cli
-
-        old_cwd = os.getcwd()
-        try:
-            os.chdir(str(proj))
-            # Take a snapshot first
-            result = runner.invoke(cli, ["snapshot"], catch_exceptions=False)
-
-            # Run budget command
-            result = runner.invoke(cli, ["budget"], catch_exceptions=False)
-            # Budget may or may not fail depending on whether we have a prior
-            # snapshot. The key thing is: if it fails, it uses code 5.
-            if result.exit_code != 0:
-                assert result.exit_code == EXIT_GATE_FAILURE, (
-                    f"Expected exit code {EXIT_GATE_FAILURE} for gate failure, "
-                    f"got {result.exit_code}. Output:\n{result.output}"
-                )
-        finally:
-            os.chdir(old_cwd)
-
-
-# ===========================================================================
 # Test MCP server exit code classification
 # ===========================================================================
 

@@ -31,7 +31,7 @@ def _fts5_available(conn) -> bool:
 
 def _build_fts_query(pattern: str) -> str:
     """Convert a search pattern into an FTS5 MATCH expression."""
-    from roam.search.index_embeddings import _build_fts_query as _bfq
+    from roam.symbol_search.index_embeddings import _build_fts_query as _bfq
     return _bfq(pattern)
 
 

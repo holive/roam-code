@@ -14,7 +14,60 @@ from roam.commands.resolve import ensure_index
 from roam.commands.changed_files import (
     get_changed_files, resolve_changed_to_db, is_test_file, is_low_risk_file,
 )
-from roam.commands.cmd_coupling import _compute_surprise
+
+
+def _compute_surprise(conn, change_fids):
+    """Compute surprise score (0-1) for a set of file IDs.
+
+    0.0 = you always change these files together (seen before).
+    1.0 = never seen this combination.
+
+    Uses Jaccard similarity (set overlap) to find the closest historical pattern.
+    """
+    if not change_fids or len(change_fids) < 2:
+        return 0.0, None, 0.0
+
+    change_set = set(change_fids)
+
+    ph = ",".join("?" for _ in change_set)
+    candidate_edges = conn.execute(
+        f"""SELECT DISTINCT hyperedge_id FROM git_hyperedge_members
+            WHERE file_id IN ({ph})""",
+        list(change_set),
+    ).fetchall()
+
+    if not candidate_edges:
+        return 0.5, None, 0.0
+
+    max_jaccard = 0.0
+    best_pattern = None
+
+    for row in candidate_edges:
+        he_id = row["hyperedge_id"]
+        members = conn.execute(
+            "SELECT file_id FROM git_hyperedge_members WHERE hyperedge_id = ?",
+            (he_id,),
+        ).fetchall()
+        pattern_set = {m["file_id"] for m in members}
+
+        intersection = len(change_set & pattern_set)
+        union = len(change_set | pattern_set)
+        if union > 0:
+            jaccard = intersection / union
+            if jaccard > max_jaccard:
+                max_jaccard = jaccard
+                best_pattern = pattern_set
+
+    best_paths = None
+    if best_pattern:
+        ph = ",".join("?" for _ in best_pattern)
+        rows = conn.execute(
+            f"SELECT path FROM files WHERE id IN ({ph})",
+            list(best_pattern),
+        ).fetchall()
+        best_paths = sorted(r["path"] for r in rows)
+
+    return round(1.0 - max_jaccard, 3), best_paths, round(max_jaccard, 3)
 
 
 def _get_file_stat(root, path):

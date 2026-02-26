@@ -26,7 +26,7 @@
 - [x] MCP tool presets: core/review/refactor/debug/architecture/full via `ROAM_MCP_PRESET` env var (#3)
 - [x] All 61 MCP tool descriptions shortened to <60 tokens each (#5)
 - [x] `roam_expand_toolset` meta-tool — lists presets and their tools (#6)
-- [x] Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose_issue` — each replaces 2-4 tool calls (#2)
+- [x] Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose` — each replaces 2-4 tool calls (#2)
 - [x] Structured return schemas (`output_schema`) on all MCP tools — compound + core get custom schemas, rest get envelope default (#4)
 
 ---
@@ -56,7 +56,7 @@ Goal: fix MCP crisis + close CI gap + launch to the world.
 | # | Item | Effort | v11? | Depends On | Status |
 |---|------|--------|------|------------|--------|
 | 1 | **[v11]** Replace subprocess MCP with in-process Python calls | 3d | YES | — | **DONE** |
-| 2 | **[v11]** Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose_issue` | 3-4d | YES | #1 | **DONE** |
+| 2 | **[v11]** Compound MCP operations: `roam_explore`, `roam_prepare_change`, `roam_review_change`, `roam_diagnose` | 3-4d | YES | #1 | **DONE** |
 | 3 | **[v11]** MCP tool presets: core (16), review (27), refactor (26), debug (27), architecture (29), full | 2-3d | YES | #1 | **DONE** |
 | 4 | **[v11]** Structured return schemas on all MCP tool descriptions | 1-2d | YES | #3 | **DONE** |
 | 5 | **[v11]** Shorten all tool descriptions to <60 tokens each | 1d | YES | #3 | **DONE** |

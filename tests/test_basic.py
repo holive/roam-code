@@ -109,35 +109,8 @@ def test_context(roam_project):
     assert "Context for" in result.stdout
 
 
-def test_safe_delete(roam_project):
-    result = _run_roam(["safe-delete", "multiply"], roam_project)
-    assert result.returncode == 0
-    assert "SAFE" in result.stdout
-
-
-def test_split(roam_project):
-    result = _run_roam(["split", "main.py"], roam_project)
-    assert result.returncode == 0
-
-
-def test_risk(roam_project):
-    result = _run_roam(["risk"], roam_project)
-    assert result.returncode == 0
-
-
 def test_pr_risk(roam_project):
     result = _run_roam(["pr-risk"], roam_project)
-    assert result.returncode == 0
-
-
-def test_why(roam_project):
-    result = _run_roam(["why", "add"], roam_project)
-    assert result.returncode == 0
-    assert "ROLE:" in result.stdout or "role" in result.stdout
-
-
-def test_why_batch(roam_project):
-    result = _run_roam(["why", "add", "multiply", "main"], roam_project)
     assert result.returncode == 0
 
 

@@ -1,7 +1,7 @@
 """Integration tests for new commands and enhancements.
 
 Covers: understand, dead --summary/--by-kind/--clusters, context (batch),
-snapshot, trend, coverage-gaps, report, and the --json envelope.
+and the --json envelope.
 """
 
 import json
@@ -202,98 +202,6 @@ class TestContextBatch:
 
 
 # ============================================================================
-# TestSnapshot
-# ============================================================================
-
-class TestSnapshot:
-    def test_snapshot_creates(self, indexed_project):
-        """roam snapshot --tag test should save a snapshot successfully."""
-        out, rc = roam("snapshot", "--tag", "test", cwd=indexed_project)
-        assert rc == 0, f"snapshot failed: {out}"
-        assert "Snapshot saved" in out or "snapshot" in out.lower(), \
-            f"Missing success message in: {out}"
-        assert "test" in out, f"Tag 'test' not in output: {out}"
-
-
-# ============================================================================
-# TestTrend
-# ============================================================================
-
-class TestTrend:
-    def test_trend_display(self, indexed_project):
-        """roam trend should display a table of snapshots.
-
-        Requires at least one snapshot to exist (created by indexing or
-        the snapshot test).
-        """
-        # Ensure at least one snapshot exists
-        roam("snapshot", "--tag", "trend-seed", cwd=indexed_project)
-        out, rc = roam("trend", cwd=indexed_project)
-        assert rc == 0, f"trend failed: {out}"
-        assert "Health Trend" in out or "Score" in out or "Date" in out, \
-            f"Missing table output in: {out}"
-
-    def test_trend_assert_pass(self, indexed_project):
-        """roam trend --assert 'cycles<=100' should pass (exit 0) for a healthy project."""
-        roam("snapshot", "--tag", "assert-seed", cwd=indexed_project)
-        out, rc = roam("trend", "--assert", "cycles<=100", cwd=indexed_project)
-        assert rc == 0, f"trend --assert should pass but failed: {out}"
-        assert "passed" in out.lower() or rc == 0
-
-    def test_trend_assert_fail(self, indexed_project):
-        """roam trend --assert 'cycles<=0' should handle strictness.
-
-        Note: if cycles is 0 this assertion actually passes.  We use
-        health_score>=999 which will definitely fail.
-        """
-        roam("snapshot", "--tag", "assert-fail-seed", cwd=indexed_project)
-        out, rc = roam("trend", "--assert", "health_score>=999", cwd=indexed_project)
-        # Should fail because health_score is never 999+
-        assert rc != 0, f"Expected assertion failure, got rc=0: {out}"
-
-
-# ============================================================================
-# TestCoverageGaps
-# ============================================================================
-
-class TestCoverageGaps:
-    def test_coverage_gaps_basic(self, indexed_project):
-        """roam coverage-gaps with a non-matching pattern should handle gracefully."""
-        out, rc = roam("coverage-gaps", "--gate-pattern", "nonexistent_xyz",
-                       cwd=indexed_project)
-        # Should either return 0 with 'No gate symbols found' or handle gracefully
-        assert "No gate" in out or "gate" in out.lower() or rc == 0, \
-            f"Unexpected coverage-gaps output: {out}"
-
-
-# ============================================================================
-# TestReport
-# ============================================================================
-
-class TestReport:
-    def test_report_list(self, indexed_project):
-        """roam report --list should show all preset names."""
-        out, rc = roam("report", "--list", cwd=indexed_project)
-        assert rc == 0, f"report --list failed: {out}"
-        assert "first-contact" in out, f"Missing 'first-contact' preset in: {out}"
-        assert "security" in out, f"Missing 'security' preset in: {out}"
-        assert "pre-pr" in out, f"Missing 'pre-pr' preset in: {out}"
-        assert "refactor" in out, f"Missing 'refactor' preset in: {out}"
-        assert "guardian" in out, f"Missing 'guardian' preset in: {out}"
-
-    @pytest.mark.slow
-    def test_report_run(self, indexed_project):
-        """roam report first-contact should run all sections without crashing."""
-        out, rc = roam("report", "first-contact", cwd=indexed_project)
-        assert rc == 0, f"report first-contact failed: {out}"
-        # Should mention the report name and section statuses
-        assert "first-contact" in out or "Report" in out, \
-            f"Missing report header in: {out}"
-        assert "OK" in out or "pass" in out.lower(), \
-            f"No section success indicators in: {out}"
-
-
-# ============================================================================
 # TestJsonEnvelope
 # ============================================================================
 
@@ -330,22 +238,6 @@ class TestJsonEnvelope:
         # Understand-specific keys
         assert "tech_stack" in data
         assert "architecture" in data
-
-    def test_json_snapshot(self, indexed_project):
-        """roam --json snapshot should have standard envelope."""
-        out, rc = roam("--json", "snapshot", "--tag", "json-test",
-                       cwd=indexed_project)
-        assert rc == 0, f"snapshot --json failed: {out}"
-        self._assert_envelope(out, "snapshot")
-
-    def test_json_trend(self, indexed_project):
-        """roam --json trend should have standard envelope."""
-        # Ensure at least one snapshot exists
-        roam("snapshot", "--tag", "json-trend-seed", cwd=indexed_project)
-        out, rc = roam("--json", "trend", cwd=indexed_project)
-        assert rc == 0, f"trend --json failed: {out}"
-        data = self._assert_envelope(out, "trend")
-        assert "snapshots" in data
 
     def test_json_context(self, indexed_project):
         """roam --json context should have standard envelope."""
@@ -386,21 +278,6 @@ class TestV6Complexity:
     def test_complexity_threshold(self, indexed_project):
         out, rc = roam("complexity", "--threshold", "0", cwd=indexed_project)
         assert rc == 0
-
-
-class TestV6Conventions:
-    """Tests for convention detection."""
-
-    def test_conventions_runs(self, indexed_project):
-        out, rc = roam("conventions", cwd=indexed_project)
-        assert rc == 0, f"conventions failed: {out}"
-        assert "Conventions" in out or "Naming" in out
-
-    def test_conventions_json(self, indexed_project):
-        out, rc = roam("--json", "conventions", cwd=indexed_project)
-        assert rc == 0, f"conventions --json failed: {out}"
-        data = json.loads(out)
-        assert data["command"] == "conventions"
 
 
 class TestV6Debt:
@@ -447,55 +324,6 @@ class TestV6EntryPoints:
         assert data["command"] == "entry-points"
 
 
-class TestV6SafeZones:
-    """Tests for safe refactoring zones."""
-
-    def test_safe_zones_runs(self, indexed_project):
-        out, rc = roam("safe-zones", "create_user", cwd=indexed_project)
-        assert rc == 0, f"safe-zones failed: {out}"
-        assert "zone" in out.lower() or "Zone" in out
-
-    def test_safe_zones_json(self, indexed_project):
-        out, rc = roam("--json", "safe-zones", "create_user", cwd=indexed_project)
-        assert rc == 0, f"safe-zones --json failed: {out}"
-        data = json.loads(out)
-        assert data["command"] == "safe-zones"
-
-
-class TestV6Patterns:
-    """Tests for architectural pattern recognition."""
-
-    def test_patterns_runs(self, indexed_project):
-        out, rc = roam("patterns", cwd=indexed_project)
-        assert rc == 0, f"patterns failed: {out}"
-
-    def test_patterns_json(self, indexed_project):
-        out, rc = roam("--json", "patterns", cwd=indexed_project)
-        assert rc == 0, f"patterns --json failed: {out}"
-        data = json.loads(out)
-        assert data["command"] == "patterns"
-
-
-class TestV6Fitness:
-    """Tests for architectural fitness functions."""
-
-    def test_fitness_init(self, indexed_project):
-        out, rc = roam("fitness", "--init", cwd=indexed_project)
-        assert rc == 0, f"fitness --init failed: {out}"
-        assert (indexed_project / ".roam" / "fitness.yaml").exists()
-
-    def test_fitness_runs(self, indexed_project):
-        out, rc = roam("fitness", cwd=indexed_project)
-        # May pass or fail depending on rules — either is valid
-        assert "Fitness check" in out or "rules" in out.lower()
-
-    def test_fitness_json(self, indexed_project):
-        out, rc = roam("--json", "fitness", cwd=indexed_project)
-        data = json.loads(out)
-        assert data["command"] == "fitness"
-        assert "rules" in data
-
-
 class TestV6Preflight:
     """Tests for pre-flight checklist."""
 
@@ -511,54 +339,6 @@ class TestV6Preflight:
         assert data["command"] == "preflight"
         assert "summary" in data
         assert "risk_level" in data["summary"]
-
-
-class TestV6Alerts:
-    """Tests for health trend alerts."""
-
-    def test_alerts_runs(self, indexed_project):
-        out, rc = roam("alerts", cwd=indexed_project)
-        assert rc == 0, f"alerts failed: {out}"
-
-    def test_alerts_json(self, indexed_project):
-        out, rc = roam("--json", "alerts", cwd=indexed_project)
-        assert rc == 0, f"alerts --json failed: {out}"
-        data = json.loads(out)
-        assert data["command"] == "alerts"
-
-
-class TestV6BusFactor:
-    """Tests for knowledge loss / bus factor."""
-
-    def test_bus_factor_runs(self, indexed_project):
-        out, rc = roam("bus-factor", cwd=indexed_project)
-        assert rc == 0, f"bus-factor failed: {out}"
-
-    def test_bus_factor_json(self, indexed_project):
-        out, rc = roam("--json", "bus-factor", cwd=indexed_project)
-        assert rc == 0, f"bus-factor --json failed: {out}"
-        data = json.loads(out)
-        assert data["command"] == "bus-factor"
-
-
-class TestV6MapBudget:
-    """Tests for token-budget-aware repo map."""
-
-    def test_map_budget_limits_output(self, indexed_project):
-        out_full, rc = roam("map", cwd=indexed_project)
-        assert rc == 0
-
-        out_budget, rc = roam("map", "--budget", "100", cwd=indexed_project)
-        assert rc == 0
-        assert "Token budget:" in out_budget
-        # Budget output should be shorter or equal
-        assert len(out_budget) <= len(out_full) + 50  # +50 for footer
-
-    def test_map_budget_json(self, indexed_project):
-        out, rc = roam("--json", "map", "--budget", "200", cwd=indexed_project)
-        assert rc == 0
-        data = json.loads(out)
-        assert "budget" in data.get("summary", {}) or "token_budget" in str(data)
 
 
 class TestV6TaskContext:
@@ -607,43 +387,3 @@ class TestV6EnhancedUnderstand:
         assert "complexity" in data or "complexity" in str(data)
 
 
-class TestV6EnhancedDescribe:
-    """Tests for enhanced describe with conventions and complexity."""
-
-    def test_describe_has_conventions(self, indexed_project):
-        out, rc = roam("describe", cwd=indexed_project)
-        assert rc == 0
-        assert "Conventions" in out or "convention" in out.lower()
-
-    def test_describe_has_complexity(self, indexed_project):
-        out, rc = roam("describe", cwd=indexed_project)
-        assert rc == 0
-        assert "Complexity" in out or "complexity" in out.lower()
-
-
-class TestV6DocStaleness:
-    """Tests for doc staleness detection."""
-
-    def test_doc_staleness_runs(self, indexed_project):
-        out, rc = roam("doc-staleness", cwd=indexed_project)
-        assert rc == 0, f"doc-staleness failed: {out}"
-
-    def test_doc_staleness_json(self, indexed_project):
-        out, rc = roam("--json", "doc-staleness", cwd=indexed_project)
-        assert rc == 0
-        data = json.loads(out)
-        assert data["command"] == "doc-staleness"
-
-
-class TestV6FnCoupling:
-    """Tests for function-level temporal coupling."""
-
-    def test_fn_coupling_runs(self, indexed_project):
-        out, rc = roam("fn-coupling", cwd=indexed_project)
-        assert rc == 0, f"fn-coupling failed: {out}"
-
-    def test_fn_coupling_json(self, indexed_project):
-        out, rc = roam("--json", "fn-coupling", cwd=indexed_project)
-        assert rc == 0
-        data = json.loads(out)
-        assert data["command"] == "fn-coupling"

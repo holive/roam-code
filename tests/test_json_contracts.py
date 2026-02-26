@@ -29,44 +29,27 @@ from roam.cli import cli
 
 COMMANDS_WITH_JSON = [
     "health", "map", "dead", "weather", "clusters", "layers",
-    "search", "grep", "file", "symbol", "deps", "uses", "fan",
-    "impact", "coupling", "diff", "context", "safe-delete",
-    "pr-risk", "split", "risk", "why", "trend", "coverage-gaps",
-    "report", "complexity", "debt", "conventions", "bus-factor",
-    "entry-points", "breaking", "safe-zones", "doc-staleness", "docs-coverage",
-    "fn-coupling", "alerts", "fitness", "patterns", "preflight",
-    "guard", "agent-plan", "agent-context",
-    "snapshot", "describe", "trace", "owner", "sketch",
-    "affected-tests", "diagnose", "test-map", "module",
+    "search", "file", "deps", "uses",
+    "impact", "diff", "context",
+    "pr-risk", "complexity", "debt",
+    "entry-points", "preflight",
+    "trace", "affected-tests", "diagnose",
+    "algo", "endpoints",
 ]
 
 # Commands that require extra arguments to run.
 # Commands not listed here are invoked with no extra args.
 COMMAND_ARGS = {
     "search": ["User"],
-    "grep": ["def"],
     "file": ["src/models.py"],
-    "symbol": ["User"],
     "trace": ["User", "create_user"],
     "deps": ["User"],
     "uses": ["User"],
     "impact": ["User"],
     "context": ["User"],
-    "safe-delete": ["unused_helper"],
-    "split": ["src/models.py"],
-    "why": ["User"],
     "preflight": ["User"],
-    "guard": ["User"],
-    "agent-plan": ["--agents", "2"],
-    "agent-context": ["--agent-id", "1", "--agents", "2"],
-    "owner": ["src/models.py"],
     "diagnose": ["User"],
     "affected-tests": ["--staged"],
-    "sketch": ["src"],
-    "safe-zones": ["src/models.py"],
-    "test-map": ["src/models.py"],
-    "module": ["src"],
-    "fan": ["symbol"],
 }
 
 # Commands that are known to be fragile in the minimal test environment
@@ -75,33 +58,16 @@ COMMAND_ARGS = {
 FRAGILE_COMMANDS = {
     "affected-tests",   # needs staged changes or a target with test coverage
     "trace",            # needs two connected symbols found by exact name
-    "trend",            # needs multiple snapshots
     "diff",             # needs uncommitted changes
     "pr-risk",          # needs uncommitted changes or PR context
-    "snapshot",         # snapshot creation may vary
-    "coverage-gaps",    # needs test file mapping
-    "doc-staleness",    # needs docstrings with stale references
-    "breaking",         # needs public API changes
     "deps",             # symbol resolution may fail in minimal project
     "uses",             # symbol resolution may fail in minimal project
-    "fan",              # symbol resolution may fail in minimal project
     "impact",           # symbol resolution may fail in minimal project
     "context",          # symbol resolution may fail in minimal project
-    "safe-delete",      # symbol resolution may fail in minimal project
-    "why",              # symbol resolution may fail in minimal project
     "preflight",        # symbol resolution may fail in minimal project
-    "guard",            # symbol resolution may fail in minimal project
     "diagnose",         # symbol resolution may fail in minimal project
-    "sketch",           # may need specific project structure
-    "symbol",           # symbol resolution may fail in minimal project
-    "report",           # may need specific report config or flags
-    "owner",            # file may not be in index
-    "describe",         # may need specific project structure
-    "test-map",         # needs test files
-    "fitness",          # may need specific project conditions
-    "safe-zones",       # needs a valid file/module target
-    "test-map",         # needs test file mapping
-    "module",           # needs module-level analysis
+    "algo",             # needs indexed project with detectable patterns
+    "endpoints",        # needs endpoint patterns in code
 }
 
 

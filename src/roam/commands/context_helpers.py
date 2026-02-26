@@ -12,7 +12,6 @@ from roam.db.connection import batched_in
 from roam.output.formatter import loc
 from roam.commands.changed_files import is_test_file
 from roam.commands.graph_helpers import build_forward_adj
-from roam.graph.propagation import propagate_context, merge_rankings
 
 
 _DEFAULT_REASON_WEIGHTS = {

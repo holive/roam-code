@@ -1075,7 +1075,7 @@ class Indexer:
             # Full-text search index (FTS5/BM25 primary, TF-IDF fallback)
             self._log("Building search index...")
             try:
-                from roam.search.index_embeddings import build_fts_index, fts5_available
+                from roam.symbol_search.index_embeddings import build_fts_index, fts5_available
                 build_fts_index(conn, project_root=self.root)
                 if fts5_available(conn):
                     fts_count = conn.execute(

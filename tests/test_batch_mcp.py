@@ -667,30 +667,8 @@ class TestBatchGet:
 # ---------------------------------------------------------------------------
 
 
-class TestCoreToolsMembership:
-    """Verify batch tools are registered as core tools."""
-
-    def test_batch_search_in_core_tools(self):
-        from roam.mcp_server import _CORE_TOOLS
-        assert "roam_batch_search" in _CORE_TOOLS
-
-    def test_batch_get_in_core_tools(self):
-        from roam.mcp_server import _CORE_TOOLS
-        assert "roam_batch_get" in _CORE_TOOLS
-
-    def test_core_tools_count_is_23(self):
-        """_CORE_TOOLS should now contain 23 tools (21 original + 2 batch)."""
-        from roam.mcp_server import _CORE_TOOLS
-        assert len(_CORE_TOOLS) == 23
-
-    def test_presets_are_supersets_of_updated_core(self):
-        """All named presets must include the new batch tools."""
-        from roam.mcp_server import _PRESETS, _CORE_TOOLS
-        for name, tools in _PRESETS.items():
-            if name == "full":
-                continue  # full has empty set (no filtering)
-            assert "roam_batch_search" in tools, f"{name} missing roam_batch_search"
-            assert "roam_batch_get" in tools, f"{name} missing roam_batch_get"
+class TestBatchToolsCallable:
+    """Verify batch tools are callable."""
 
     def test_batch_tools_callable(self):
         from roam.mcp_server import batch_search, batch_get

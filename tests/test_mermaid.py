@@ -231,42 +231,6 @@ class TestClustersMermaid:
         assert r1.output == r2.output
 
 
-class TestTourMermaid:
-    """Tests for roam tour --mermaid."""
-
-    def test_tour_mermaid_output(self, cli_runner, indexed_project, monkeypatch):
-        """--mermaid produces output starting with 'graph'."""
-        monkeypatch.chdir(indexed_project)
-        result = invoke_cli(cli_runner, ["tour", "--mermaid"], cwd=indexed_project)
-        assert result.exit_code == 0, f"tour --mermaid failed:\n{result.output}"
-        output = result.output.strip()
-        assert output.startswith("graph"), f"Expected Mermaid diagram, got:\n{output}"
-
-    def test_tour_mermaid_has_nodes(self, cli_runner, indexed_project, monkeypatch):
-        """--mermaid output contains node definitions."""
-        monkeypatch.chdir(indexed_project)
-        result = invoke_cli(cli_runner, ["tour", "--mermaid"], cwd=indexed_project)
-        assert result.exit_code == 0
-        # Node definitions use ["label"] syntax
-        assert "[" in result.output
-
-    def test_tour_mermaid_json(self, cli_runner, indexed_project, monkeypatch):
-        """--mermaid --json includes mermaid field in JSON envelope."""
-        monkeypatch.chdir(indexed_project)
-        result = invoke_cli(cli_runner, ["tour", "--mermaid"],
-                            cwd=indexed_project, json_mode=True)
-        data = parse_json_output(result, "tour")
-        assert "mermaid" in data, f"Missing 'mermaid' key in JSON envelope"
-        assert data["mermaid"].startswith("graph")
-
-    def test_tour_mermaid_deterministic(self, cli_runner, indexed_project, monkeypatch):
-        """Same input produces identical Mermaid output."""
-        monkeypatch.chdir(indexed_project)
-        r1 = invoke_cli(cli_runner, ["tour", "--mermaid"], cwd=indexed_project)
-        r2 = invoke_cli(cli_runner, ["tour", "--mermaid"], cwd=indexed_project)
-        assert r1.output == r2.output
-
-
 class TestMermaidNoArrows:
     """Edge cases: Mermaid output without enough data."""
 

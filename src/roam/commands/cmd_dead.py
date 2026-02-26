@@ -696,7 +696,6 @@ def dead(ctx, show_all, by_directory, by_kind, summary_only, show_clusters,
          sort_by_age, sort_by_effort, sort_by_decay):
     """Show unreferenced exported symbols (dead code)."""
     json_mode = ctx.obj.get('json') if ctx.obj else False
-    sarif_mode = ctx.obj.get('sarif') if ctx.obj else False
     detail = ctx.obj.get('detail', False) if ctx.obj else False
     token_budget = ctx.obj.get('budget', 0) if ctx.obj else 0
     ensure_index()
@@ -752,11 +751,6 @@ def dead(ctx, show_all, by_directory, by_kind, summary_only, show_clusters,
         )
 
         if not all_items:
-            if sarif_mode:
-                from roam.output.sarif import dead_to_sarif, write_sarif
-                sarif = dead_to_sarif([])
-                click.echo(write_sarif(sarif))
-                return
             if json_mode:
                 click.echo(to_json(json_envelope("dead",
                     summary={"safe": 0, "review": 0, "intentional": 0, "unused_assignments": len(unused_assignments)},
@@ -775,21 +769,6 @@ def dead(ctx, show_all, by_directory, by_kind, summary_only, show_clusters,
         n_safe = sum(1 for _, a, _c in all_dead if a == "SAFE")
         n_review = sum(1 for _, a, _c in all_dead if a == "REVIEW")
         n_intent = sum(1 for _, a, _c in all_dead if a == "INTENTIONAL")
-
-        # --- SARIF output ---
-        if sarif_mode:
-            from roam.output.sarif import dead_to_sarif, write_sarif
-            dead_exports = []
-            for r, action, confidence in all_dead:
-                dead_exports.append({
-                    "name": r["name"],
-                    "kind": r["kind"],
-                    "location": loc(r["file_path"], r["line_start"]),
-                    "action": action,
-                })
-            sarif = dead_to_sarif(dead_exports)
-            click.echo(write_sarif(sarif))
-            return
 
         # --- Cluster detection (also needed for extended data) ---
         clusters_data = []

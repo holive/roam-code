@@ -2,7 +2,7 @@
 
 Covers:
 - All supported languages (Python, JS, TS, Java, Go, Rust, C, PHP, Ruby, C#, Kotlin)
-- All 18 CLI commands
+- Core CLI commands (index, search, file, trace, deps, uses, impact, context, etc.)
 - Inheritance/implements/trait edges across languages
 - Properties/fields across languages
 - Incremental indexing (add, modify, remove, no-change)
@@ -810,10 +810,8 @@ def polyglot(tmp_path_factory):
 
 class TestPython:
     def test_class_extracted(self, polyglot):
-        out, _ = roam("symbol", "Animal", cwd=polyglot)
+        out, _ = roam("search", "Animal", cwd=polyglot)
         assert "Animal" in out
-        # Animal exists in both Python and Java; either file path is fine
-        assert "base.py" in out or "Animal.java" in out
 
     def test_method_extracted(self, polyglot):
         out, _ = roam("search", "speak", cwd=polyglot)
@@ -890,8 +888,8 @@ class TestJavaScript:
 
     def test_cjs_exports_qualified(self, polyglot):
         """CJS export functions should have qualified names."""
-        out, _ = roam("symbol", "normalizeType", cwd=polyglot)
-        assert "exports.normalizeType" in out
+        out, _ = roam("file", "javascript/cjs_exports.js", cwd=polyglot)
+        assert "normalizeType" in out
 
     def test_cjs_obj_method_assignment(self, polyglot):
         """app.init = function() should be extracted."""
@@ -921,7 +919,7 @@ class TestTypeScript:
         assert "Serializable" in out
 
     def test_abstract_class(self, polyglot):
-        out, _ = roam("symbol", "BaseEntity", cwd=polyglot)
+        out, _ = roam("search", "BaseEntity", cwd=polyglot)
         assert "BaseEntity" in out
 
     def test_extends_edge(self, polyglot):
@@ -981,7 +979,7 @@ class TestJava:
         assert "GuideDog" in out
 
     def test_no_doubled_keywords(self, polyglot):
-        out, _ = roam("symbol", "Dog", cwd=polyglot)
+        out, _ = roam("search", "Dog", cwd=polyglot)
         assert "extends extends" not in out
         assert "implements implements" not in out
 
@@ -1238,10 +1236,8 @@ class TestVueSFC:
 
     def test_vue_symbol_has_callers(self, polyglot):
         """TS function imported by Vue should show callers from Vue file."""
-        out, _ = roam("symbol", "useCounter", cwd=polyglot)
-        assert "useCounter" in out
-        # The Vue file should appear as a caller
-        assert "App.vue" in out or "in=" in out
+        out, _ = roam("uses", "useCounter", cwd=polyglot)
+        assert "useCounter" in out or "App.vue" in out
 
     def test_vue_no_script_tags_in_parse(self, polyglot):
         """The <script> and </script> tags should not appear as symbols."""
@@ -1250,11 +1246,11 @@ class TestVueSFC:
 
 
 # ============================================================================
-# ALL 18 COMMANDS
+# CORE COMMANDS
 # ============================================================================
 
 class TestCommands:
-    """Test every CLI command produces valid output on the polyglot project."""
+    """Test core CLI commands produce valid output on the polyglot project."""
 
     def test_index(self, polyglot):
         out, rc = index_in_process(polyglot)
@@ -1266,25 +1262,8 @@ class TestCommands:
         assert rc == 0
         assert "Files:" in out
 
-    def test_module(self, polyglot):
-        out, rc = roam("module", "python", cwd=polyglot)
-        assert rc == 0
-        assert "base.py" in out or "dog.py" in out
-
-    def test_module_root(self, polyglot):
-        """roam module . should work for root-level files."""
-        # Our polyglot project has no root-level files, but it shouldn't crash
-        out, rc = roam("module", ".", cwd=polyglot)
-        # May show no files or all files, but shouldn't crash hard
-        assert rc == 0 or "No files" in out
-
     def test_file(self, polyglot):
         out, rc = roam("file", "python/base.py", cwd=polyglot)
-        assert rc == 0
-        assert "Animal" in out
-
-    def test_symbol(self, polyglot):
-        out, rc = roam("symbol", "Animal", cwd=polyglot)
         assert rc == 0
         assert "Animal" in out
 
@@ -1326,11 +1305,6 @@ class TestCommands:
         out, rc = roam("search", "Store", cwd=polyglot)
         assert rc == 0
         assert "MemoryStore" in out or "RedisStore" in out
-
-    def test_grep(self, polyglot):
-        out, rc = roam("grep", "speak", cwd=polyglot)
-        assert rc == 0
-        assert "speak" in out
 
     def test_uses(self, polyglot):
         out, rc = roam("uses", "Animal", cwd=polyglot)
@@ -1504,9 +1478,10 @@ class TestErrorHandling:
         assert rc != 0
 
     def test_nonexistent_symbol(self, err_project):
-        """roam symbol with unknown name should fail gracefully."""
-        out, rc = roam("symbol", "DoesNotExist", cwd=err_project)
-        assert rc != 0
+        """roam search with unknown name should return empty results."""
+        out, rc = roam("search", "DoesNotExist", cwd=err_project)
+        assert rc == 0
+        assert "No symbols" in out or "DoesNotExist" not in out
 
     def test_empty_search(self, err_project):
         """roam search with no matches should succeed with message."""
@@ -1520,12 +1495,10 @@ class TestErrorHandling:
         from roam.cli import cli
 
         commands = [
-            "index", "map", "module", "file", "symbol", "trace",
+            "index", "map", "file", "trace",
             "deps", "health", "clusters", "layers", "weather",
-            "dead", "search", "grep", "uses", "impact", "owner",
-            "coupling", "fan", "diff", "describe", "test-map",
-            "sketch", "context", "safe-delete", "pr-risk", "split",
-            "risk", "why",
+            "dead", "search", "uses", "impact",
+            "diff", "context", "pr-risk",
         ]
         runner = CliRunner()
         for cmd in commands:
@@ -1671,97 +1644,6 @@ class TestCrossLanguage:
         out, _ = roam("search", "speak", cwd=polyglot)
         assert out.count("speak") >= 2
 
-    def test_grep_cross_language(self, polyglot):
-        """Grep should search across all files."""
-        out, _ = roam("grep", "return", cwd=polyglot)
-        # Should match in many languages
-        assert ".py" in out or ".java" in out or ".js" in out
-
-
-# ============================================================================
-# NEW v3.6 COMMANDS
-# ============================================================================
-
-class TestDescribe:
-    def test_describe_runs(self, polyglot):
-        """roam describe should produce Markdown output."""
-        out, rc = roam("describe", cwd=polyglot)
-        assert rc == 0
-        assert "Project Overview" in out
-        assert "Files:" in out or "**Files:**" in out
-
-    def test_describe_has_sections(self, polyglot):
-        """Describe should include all major sections."""
-        out, rc = roam("describe", cwd=polyglot)
-        assert rc == 0
-        assert "Directory Structure" in out
-        assert "Entry Points" in out
-        assert "Testing" in out
-
-    def test_describe_write(self, polyglot):
-        """roam describe --write should create CLAUDE.md."""
-        out, rc = roam("describe", "--write", cwd=polyglot)
-        assert rc == 0
-        claude_md = polyglot / "CLAUDE.md"
-        assert claude_md.exists()
-        content = claude_md.read_text(encoding="utf-8")
-        assert "Project" in content
-
-    def test_describe_help(self):
-        """roam describe --help should work."""
-        out, rc = roam("describe", "--help")
-        assert rc == 0
-
-
-class TestTestMap:
-    def test_testmap_symbol(self, polyglot):
-        """roam test-map for a symbol should show test coverage."""
-        out, rc = roam("test-map", "Animal", cwd=polyglot)
-        assert rc == 0
-        assert "Test coverage" in out or "test" in out.lower()
-
-    def test_testmap_file(self, polyglot):
-        """roam test-map for a file should show test files."""
-        out, rc = roam("test-map", "python/base.py", cwd=polyglot)
-        assert rc == 0
-        assert "Test coverage" in out or "test" in out.lower()
-
-    def test_testmap_not_found(self, polyglot):
-        """roam test-map with nonexistent name should fail gracefully."""
-        out, rc = roam("test-map", "NonExistentThing999", cwd=polyglot)
-        assert rc != 0
-
-    def test_testmap_help(self):
-        """roam test-map --help should work."""
-        out, rc = roam("test-map", "--help")
-        assert rc == 0
-
-
-class TestSketch:
-    def test_sketch_directory(self, polyglot):
-        """roam sketch should show exported symbols per file."""
-        out, rc = roam("sketch", "python", cwd=polyglot)
-        assert rc == 0
-        # Should show file paths and symbol kinds
-        assert "python" in out
-
-    def test_sketch_full(self, polyglot):
-        """roam sketch --full should show all symbols."""
-        out, rc = roam("sketch", "python", "--full", cwd=polyglot)
-        assert rc == 0
-        assert "python" in out
-
-    def test_sketch_nonexistent(self, polyglot):
-        """roam sketch with nonexistent dir should handle gracefully."""
-        out, rc = roam("sketch", "nonexistent_dir_xyz", cwd=polyglot)
-        assert rc == 0
-        assert "No" in out
-
-    def test_sketch_help(self):
-        """roam sketch --help should work."""
-        out, rc = roam("sketch", "--help")
-        assert rc == 0
-
 
 # ============================================================================
 # CONTEXT COMMAND (v4.1)
@@ -1813,160 +1695,8 @@ class TestContext:
 
 
 # ============================================================================
-# SAFE-DELETE COMMAND (v4.1)
+# PR-RISK COMMAND (v4.1)
 # ============================================================================
-
-class TestSafeDelete:
-    def test_safe_delete_unused(self, polyglot):
-        """roam safe-delete on an unused symbol should show SAFE."""
-        # _internal is a private method in Animal with no callers
-        out, rc = roam("safe-delete", "_internal", cwd=polyglot)
-        assert rc == 0
-        assert "SAFE" in out
-
-    def test_safe_delete_used(self, polyglot):
-        """roam safe-delete on a used symbol should show UNSAFE or REVIEW."""
-        out, rc = roam("safe-delete", "Animal", cwd=polyglot)
-        assert rc == 0
-        # Animal is used by Dog, Cat, and tests — should not be SAFE
-        assert "UNSAFE" in out or "REVIEW" in out
-
-    def test_safe_delete_shows_callers(self, polyglot):
-        """roam safe-delete on a used symbol should list callers."""
-        out, rc = roam("safe-delete", "Animal", cwd=polyglot)
-        assert rc == 0
-        assert "References" in out or "caller" in out.lower()
-
-    def test_safe_delete_json(self, polyglot):
-        """roam --json safe-delete should produce valid JSON with verdict."""
-        import json
-        out, rc = roam("--json", "safe-delete", "Animal", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert "verdict" in data
-        assert data["verdict"] in ("SAFE", "REVIEW", "UNSAFE")
-        assert "direct_callers" in data
-        assert "transitive_dependents" in data
-
-    def test_safe_delete_json_unused(self, polyglot):
-        """roam --json safe-delete on unused symbol should return SAFE verdict."""
-        import json
-        out, rc = roam("--json", "safe-delete", "_internal", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert data["verdict"] == "SAFE"
-        assert data["direct_callers"] == 0
-
-    def test_safe_delete_not_found(self, polyglot):
-        """roam safe-delete with nonexistent symbol should fail gracefully."""
-        out, rc = roam("safe-delete", "NonExistentThing999", cwd=polyglot)
-        assert rc != 0
-        assert "not found" in out.lower()
-
-    def test_safe_delete_help(self):
-        """roam safe-delete --help should work."""
-        out, rc = roam("safe-delete", "--help")
-        assert rc == 0
-
-
-# ============================================================================
-# SPLIT COMMAND (v4.4)
-# ============================================================================
-
-class TestSplit:
-    def test_split_basic(self, polyglot):
-        """roam split should analyze file internal structure."""
-        out, rc = roam("split", "javascript/app.js", cwd=polyglot)
-        assert rc == 0
-        assert "Split analysis" in out or "symbols" in out
-
-    def test_split_shows_groups(self, polyglot):
-        """roam split should show symbol groups."""
-        out, rc = roam("split", "javascript/app.js", cwd=polyglot)
-        assert rc == 0
-        # Should show groups or at least report the symbol count
-        assert "Group" in out or "symbols" in out
-
-    def test_split_json(self, polyglot):
-        """roam --json split should produce valid JSON."""
-        import json
-        out, rc = roam("--json", "split", "javascript/app.js", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert "path" in data
-        assert "total_symbols" in data
-        assert "groups" in data
-        assert isinstance(data["groups"], list)
-
-    def test_split_too_few_symbols(self, polyglot):
-        """roam split on a tiny file should report gracefully."""
-        # python/cat.py has Cat class + speak + lives = 3 symbols
-        # That's at the threshold — may analyze or say too few
-        out, rc = roam("split", "python/cat.py", cwd=polyglot)
-        assert rc == 0
-
-    def test_split_min_group(self, polyglot):
-        """roam split --min-group should filter small groups."""
-        out, rc = roam("split", "javascript/app.js", "--min-group", "1",
-                        cwd=polyglot)
-        assert rc == 0
-
-    def test_split_not_found(self, polyglot):
-        """roam split with nonexistent file should fail gracefully."""
-        out, rc = roam("split", "nonexistent_file.py", cwd=polyglot)
-        assert rc != 0
-        assert "not found" in out.lower()
-
-    def test_split_help(self):
-        """roam split --help should work."""
-        out, rc = roam("split", "--help")
-        assert rc == 0
-
-
-# ============================================================================
-# RISK COMMAND (v4.4)
-# ============================================================================
-
-class TestRisk:
-    def test_risk_basic(self, polyglot):
-        """roam risk should show domain-weighted risk ranking."""
-        out, rc = roam("risk", cwd=polyglot)
-        assert rc == 0
-        # May show "Risk" header or "No graph metrics" if no metrics
-        assert "Risk" in out or "No graph" in out
-
-    def test_risk_json(self, polyglot):
-        """roam --json risk should produce valid JSON."""
-        import json
-        out, rc = roam("--json", "risk", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert "items" in data
-        assert isinstance(data["items"], list)
-
-    def test_risk_with_domain(self, polyglot):
-        """roam risk --domain should accept custom keywords at max weight."""
-        out, rc = roam("risk", "--domain", "animal,speak", cwd=polyglot)
-        assert rc == 0
-
-    def test_risk_count_limit(self, polyglot):
-        """roam risk -n should limit output count."""
-        out, rc = roam("risk", "-n", "3", cwd=polyglot)
-        assert rc == 0
-
-    def test_risk_json_with_domain(self, polyglot):
-        """roam --json risk --domain should include domain match info."""
-        import json
-        out, rc = roam("--json", "risk", "--domain", "animal", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert "items" in data
-
-    def test_risk_help(self):
-        """roam risk --help should work."""
-        out, rc = roam("risk", "--help")
-        assert rc == 0
-
 
 # ============================================================================
 # PR-RISK COMMAND (v4.1)
@@ -2047,73 +1777,3 @@ class TestPrRisk:
         assert rc == 0
 
 
-class TestWhy:
-    """Tests for the 'why' command."""
-
-    def test_why_basic(self, polyglot):
-        """roam why should show role, reach, critical, cluster, verdict."""
-        out, rc = roam("why", "Animal", cwd=polyglot)
-        assert rc == 0
-        assert "ROLE:" in out
-        assert "REACH:" in out
-        assert "CRITICAL:" in out
-        assert "VERDICT:" in out
-
-    def test_why_shows_cluster(self, polyglot):
-        """roam why should show cluster membership."""
-        out, rc = roam("why", "Animal", cwd=polyglot)
-        assert rc == 0
-        assert "CLUSTER:" in out
-
-    def test_why_json(self, polyglot):
-        """roam why --json should return valid JSON with expected fields."""
-        import json
-        out, rc = roam("--json", "why", "Animal", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert "symbols" in data
-        assert len(data["symbols"]) == 1
-        sym = data["symbols"][0]
-        assert "role" in sym
-        assert "fan_in" in sym
-        assert "fan_out" in sym
-        assert "reach" in sym
-        assert "critical" in sym
-        assert "verdict" in sym
-
-    def test_why_batch(self, polyglot):
-        """roam why with multiple symbols should produce batch table."""
-        out, rc = roam("why", "Animal", "speak", "_internal", cwd=polyglot)
-        assert rc == 0
-        # Batch mode outputs a table with all symbol names
-        assert "Animal" in out
-        assert "speak" in out
-
-    def test_why_batch_json(self, polyglot):
-        """roam why --json with multiple symbols should return all."""
-        import json
-        out, rc = roam("--json", "why", "Animal", "speak", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        assert len(data["symbols"]) == 2
-
-    def test_why_not_found(self, polyglot):
-        """roam why with unknown symbol should fail."""
-        out, rc = roam("why", "NonExistentThing999", cwd=polyglot)
-        assert rc != 0
-
-    def test_why_role_classification(self, polyglot):
-        """roam why should classify roles correctly."""
-        import json
-        out, rc = roam("--json", "why", "_internal", cwd=polyglot)
-        assert rc == 0
-        data = json.loads(out)
-        sym = data["symbols"][0]
-        # _internal has no callers, should be Leaf
-        assert sym["role"] == "Leaf"
-
-    def test_why_help(self):
-        """roam why --help should work."""
-        out, rc = roam("why", "--help")
-        assert rc == 0
-        assert "role" in out.lower() or "verdict" in out.lower()

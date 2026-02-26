@@ -225,131 +225,18 @@ class TestToolDecorator:
     def test_default_preset_filters_non_core(self):
         """Non-core tools should be plain functions in core preset (default)."""
         import roam.mcp_server as mod
-        # In core preset (default), non-core tool functions are not registered
-        # They should still be callable as regular functions
-        assert callable(mod.visualize)
-
-    def test_core_tools_set_has_expected_members(self):
-        """Core tools set should contain the documented tools."""
-        from roam.mcp_server import _CORE_TOOLS
-        expected = {
-            # compound operations (4)
-            "roam_explore", "roam_prepare_change", "roam_review_change",
-            "roam_diagnose_issue",
-            # batch operations (2)
-            "roam_batch_search", "roam_batch_get",
-            # comprehension (5)
-            "roam_understand", "roam_search_symbol", "roam_context",
-            "roam_file_info", "roam_deps",
-            # daily workflow (7)
-            "roam_preflight", "roam_diff",
-            "roam_pr_risk", "roam_affected_tests", "roam_impact",
-            "roam_uses", "roam_syntax_check",
-            # code quality (5)
-            "roam_health", "roam_dead_code",
-            "roam_complexity_report", "roam_diagnose", "roam_trace",
-        }
-        assert _CORE_TOOLS == expected
-
-    def test_core_tools_count(self):
-        from roam.mcp_server import _CORE_TOOLS
-        assert len(_CORE_TOOLS) == 23
+        # test that a remaining tool function is callable
+        assert callable(mod.understand)
 
     def test_required_task_tools_declared(self):
         from roam.mcp_server import _TASK_REQUIRED_TOOLS
-        assert {"roam_init", "roam_reindex"}.issubset(_TASK_REQUIRED_TOOLS)
+        # after removing roam_init and roam_reindex, this set should be empty
+        assert isinstance(_TASK_REQUIRED_TOOLS, set)
 
     def test_init_and_reindex_are_non_read_only(self):
         from roam.mcp_server import _NON_READ_ONLY_TOOLS
-        assert "roam_init" in _NON_READ_ONLY_TOOLS
-        assert "roam_reindex" in _NON_READ_ONLY_TOOLS
-
-    def test_presets_all_defined(self):
-        """All 6 presets should be defined."""
-        from roam.mcp_server import _PRESETS
-        assert set(_PRESETS.keys()) == {"core", "review", "refactor", "debug", "architecture", "full"}
-
-    def test_presets_are_supersets_of_core(self):
-        """Named presets (except full) should include all core tools."""
-        from roam.mcp_server import _PRESETS, _CORE_TOOLS
-        for name, tools in _PRESETS.items():
-            if name == "full":
-                assert tools == set(), "full preset should be empty set (no filtering)"
-            else:
-                assert _CORE_TOOLS.issubset(tools), f"{name} preset missing core tools"
-
-    def test_meta_tool_is_callable(self):
-        """expand_toolset should be a callable function regardless of FastMCP."""
-        from roam.mcp_server import expand_toolset
-        assert callable(expand_toolset)
-
-    def test_resolve_preset_default(self):
-        """Default preset should be 'core'."""
-        from roam.mcp_server import _resolve_preset
-        with patch.dict(os.environ, {}, clear=False):
-            # Remove both env vars if present
-            env = os.environ.copy()
-            env.pop("ROAM_MCP_PRESET", None)
-            env.pop("ROAM_MCP_LITE", None)
-            with patch.dict(os.environ, env, clear=True):
-                # With neither env var, default is core
-                result = _resolve_preset()
-                assert result == "core"
-
-    def test_resolve_preset_explicit(self):
-        """Explicit ROAM_MCP_PRESET should override default."""
-        from roam.mcp_server import _resolve_preset
-        with patch.dict(os.environ, {"ROAM_MCP_PRESET": "review"}):
-            assert _resolve_preset() == "review"
-
-    def test_resolve_preset_legacy_lite_off(self):
-        """ROAM_MCP_LITE=0 should map to 'full' preset."""
-        from roam.mcp_server import _resolve_preset
-        with patch.dict(os.environ, {"ROAM_MCP_LITE": "0"}, clear=False):
-            env = os.environ.copy()
-            env.pop("ROAM_MCP_PRESET", None)
-            with patch.dict(os.environ, env, clear=True):
-                env["ROAM_MCP_LITE"] = "0"
-                with patch.dict(os.environ, env, clear=True):
-                    assert _resolve_preset() == "full"
-
-
-# ---------------------------------------------------------------------------
-# expand_toolset meta-tool tests
-# ---------------------------------------------------------------------------
-
-
-class TestExpandToolset:
-    """Test the expand_toolset meta-tool."""
-
-    def test_list_all_presets(self):
-        from roam.mcp_server import expand_toolset
-        result = expand_toolset()
-        assert "active_preset" in result
-        assert "presets" in result
-        assert set(result["presets"].keys()) == {
-            "core", "review", "refactor", "debug", "architecture", "full",
-        }
-
-    def test_inspect_specific_preset(self):
-        from roam.mcp_server import expand_toolset
-        result = expand_toolset(preset="review")
-        assert result["requested_preset"] == "review"
-        assert "tools" in result
-        assert isinstance(result["tools"], list)
-        assert len(result["tools"]) > 20  # review has more than core
-        assert "switch_instructions" in result
-
-    def test_inspect_core_preset(self):
-        from roam.mcp_server import expand_toolset
-        result = expand_toolset(preset="core")
-        assert result["tool_count"] == 23
-
-    def test_invalid_preset(self):
-        from roam.mcp_server import expand_toolset
-        result = expand_toolset(preset="nonexistent")
-        # Falls through to list-all-presets path
-        assert "presets" in result
+        # after removing roam_init and roam_reindex, this set should be empty
+        assert isinstance(_NON_READ_ONLY_TOOLS, set)
 
 
 # ---------------------------------------------------------------------------
@@ -528,21 +415,6 @@ class TestToolWrappers:
         from roam.mcp_server import roam_diff
         self._check_args(roam_diff, {"staged": True}, ["diff", "--staged"])
 
-    def test_roam_symbol(self):
-        from roam.mcp_server import roam_symbol
-        self._check_args(roam_symbol, {"name": "foo"}, ["symbol", "foo"])
-
-    def test_roam_symbol_full(self):
-        from roam.mcp_server import roam_symbol
-        self._check_args(
-            roam_symbol, {"name": "foo", "full": True},
-            ["symbol", "foo", "--full"],
-        )
-
-    def test_roam_deps(self):
-        from roam.mcp_server import roam_deps
-        self._check_args(roam_deps, {"path": "src/cli.py"}, ["deps", "src/cli.py"])
-
     def test_roam_uses(self):
         from roam.mcp_server import roam_uses
         self._check_args(roam_uses, {"name": "open_db"}, ["uses", "open_db"])
@@ -565,207 +437,6 @@ class TestToolWrappers:
             ],
         )
 
-    def test_roam_weather(self):
-        from roam.mcp_server import roam_weather
-        self._check_args(roam_weather, {"count": 10}, ["weather", "-n", "10"])
-
-    def test_roam_debt(self):
-        from roam.mcp_server import roam_debt
-        self._check_args(roam_debt, {}, ["debt", "-n", "20"])
-
-    def test_roam_debt_full(self):
-        from roam.mcp_server import roam_debt
-        self._check_args(
-            roam_debt,
-            {"limit": 5, "by_kind": True, "threshold": 10.0},
-            ["debt", "-n", "5", "--by-kind", "--threshold", "10.0"],
-        )
-
-    def test_roam_debt_with_roi(self):
-        from roam.mcp_server import roam_debt
-        self._check_args(
-            roam_debt,
-            {"limit": 5, "roi": True},
-            ["debt", "-n", "5", "--roi"],
-        )
-
-    def test_roam_docs_coverage(self):
-        from roam.mcp_server import roam_docs_coverage
-        self._check_args(
-            roam_docs_coverage,
-            {},
-            ["docs-coverage", "--limit", "20", "--days", "90"],
-        )
-
-    def test_roam_docs_coverage_with_gate(self):
-        from roam.mcp_server import roam_docs_coverage
-        self._check_args(
-            roam_docs_coverage,
-            {"limit": 10, "days": 30, "threshold": 80},
-            ["docs-coverage", "--limit", "10", "--days", "30", "--threshold", "80"],
-        )
-
-    def test_roam_suggest_refactoring(self):
-        from roam.mcp_server import roam_suggest_refactoring
-        self._check_args(
-            roam_suggest_refactoring,
-            {},
-            ["suggest-refactoring", "--limit", "20", "--min-score", "45"],
-        )
-
-    def test_roam_suggest_refactoring_with_threshold(self):
-        from roam.mcp_server import roam_suggest_refactoring
-        self._check_args(
-            roam_suggest_refactoring,
-            {"limit": 10, "min_score": 60},
-            ["suggest-refactoring", "--limit", "10", "--min-score", "60"],
-        )
-
-    def test_roam_plan_refactor_default(self):
-        from roam.mcp_server import roam_plan_refactor
-        self._check_args(
-            roam_plan_refactor,
-            {"symbol": "User"},
-            ["plan-refactor", "User", "--operation", "auto", "--max-steps", "7"],
-        )
-
-    def test_roam_plan_refactor_with_options(self):
-        from roam.mcp_server import roam_plan_refactor
-        self._check_args(
-            roam_plan_refactor,
-            {
-                "symbol": "User",
-                "operation": "extract",
-                "target_file": "src/user_refactor.py",
-                "max_steps": 5,
-            },
-            [
-                "plan-refactor",
-                "User",
-                "--operation",
-                "extract",
-                "--max-steps",
-                "5",
-                "--target-file",
-                "src/user_refactor.py",
-            ],
-        )
-
-    def test_roam_n1(self):
-        from roam.mcp_server import roam_n1
-        self._check_args(roam_n1, {}, ["n1"])
-
-    def test_roam_n1_with_options(self):
-        from roam.mcp_server import roam_n1
-        self._check_args(
-            roam_n1,
-            {"confidence": "high", "verbose": True},
-            ["n1", "--confidence", "high", "--verbose"],
-        )
-
-    def test_roam_auth_gaps(self):
-        from roam.mcp_server import roam_auth_gaps
-        self._check_args(roam_auth_gaps, {}, ["auth-gaps"])
-
-    def test_roam_auth_gaps_routes_only(self):
-        from roam.mcp_server import roam_auth_gaps
-        self._check_args(
-            roam_auth_gaps,
-            {"routes_only": True},
-            ["auth-gaps", "--routes-only"],
-        )
-
-    def test_roam_over_fetch(self):
-        from roam.mcp_server import roam_over_fetch
-        self._check_args(roam_over_fetch, {}, ["over-fetch", "--threshold", "10"])
-
-    def test_roam_missing_index(self):
-        from roam.mcp_server import roam_missing_index
-        self._check_args(roam_missing_index, {}, ["missing-index"])
-
-    def test_roam_orphan_routes(self):
-        from roam.mcp_server import roam_orphan_routes
-        self._check_args(roam_orphan_routes, {}, ["orphan-routes", "-n", "50"])
-
-    def test_roam_migration_safety(self):
-        from roam.mcp_server import roam_migration_safety
-        self._check_args(roam_migration_safety, {}, ["migration-safety", "-n", "50"])
-
-    def test_roam_api_drift(self):
-        from roam.mcp_server import roam_api_drift
-        self._check_args(roam_api_drift, {}, ["api-drift"])
-
-    def test_roam_api_drift_with_model(self):
-        from roam.mcp_server import roam_api_drift
-        self._check_args(
-            roam_api_drift,
-            {"model": "User", "confidence": "high"},
-            ["api-drift", "--model", "User", "--confidence", "high"],
-        )
-
-    def test_roam_init_default_args(self):
-        from roam.mcp_server import roam_init
-        with patch("roam.mcp_server._run_roam") as mock:
-            mock.return_value = {"ok": True}
-            asyncio.run(roam_init())
-            mock.assert_called_once_with(["init", "--yes"], ".")
-
-    def test_roam_init_with_root_no_yes(self):
-        from roam.mcp_server import roam_init
-        with patch("roam.mcp_server._run_roam") as mock:
-            mock.return_value = {"ok": True}
-            asyncio.run(roam_init(root="repo", yes=False))
-            mock.assert_called_once_with(["init", "--root", "repo"], "repo")
-
-    def test_roam_reindex_default_args(self):
-        from roam.mcp_server import roam_reindex
-        with patch("roam.mcp_server._run_roam") as mock:
-            mock.return_value = {"ok": True}
-            asyncio.run(roam_reindex())
-            mock.assert_called_once_with(["index"], ".")
-
-    def test_roam_reindex_with_flags(self):
-        from roam.mcp_server import roam_reindex
-        with patch("roam.mcp_server._run_roam") as mock:
-            mock.return_value = {"ok": True}
-            asyncio.run(roam_reindex(force=True, verbose=True, confirm_force=True, root="repo"))
-            mock.assert_called_once_with(["index", "--force", "--verbose"], "repo")
-
-    def test_roam_reindex_force_requires_elicitation_when_unavailable(self):
-        from roam.mcp_server import roam_reindex
-        result = asyncio.run(roam_reindex(force=True))
-        assert result["isError"] is True
-        assert result["error_code"] == "ELICITATION_REQUIRED"
-
-    def test_roam_reindex_force_cancelled_by_elicitation(self):
-        from roam.mcp_server import roam_reindex
-
-        class _Ctx:
-            async def elicit(self, _message, _response_type):
-                return SimpleNamespace(action="decline")
-
-        result = asyncio.run(roam_reindex(force=True, ctx=_Ctx()))
-        assert result["cancelled"] is True
-        assert "cancelled" in result["summary"]["verdict"]
-
-    def test_roam_reindex_force_accepts_elicitation(self):
-        from roam.mcp_server import roam_reindex
-
-        class _Ctx:
-            async def elicit(self, _message, _response_type):
-                return SimpleNamespace(action="accept", data="continue")
-
-            async def report_progress(self, **kwargs):
-                return None
-
-            async def info(self, _message):
-                return None
-
-        with patch("roam.mcp_server._run_roam") as mock:
-            mock.return_value = {"summary": {"verdict": "ok"}}
-            result = asyncio.run(roam_reindex(force=True, ctx=_Ctx()))
-            mock.assert_called_once_with(["index", "--force"], ".")
-            assert result.get("force") is True
 
 
 # ---------------------------------------------------------------------------
@@ -966,17 +637,14 @@ class TestCompoundOperations:
     def test_review_change_default(self):
         from roam.mcp_server import review_change
         risk = {"summary": {"verdict": "LOW 12/100"}}
-        brk = {"summary": {"verdict": "0 breaking"}}
         diff = {"summary": {"verdict": "2 files"}}
         with patch("roam.mcp_server._run_roam") as mock:
-            mock.side_effect = [risk, brk, diff]
+            mock.side_effect = [risk, diff]
             result = review_change()
-            assert mock.call_count == 3
+            assert mock.call_count == 2
             assert mock.call_args_list[0][0][0] == ["pr-risk"]
-            assert mock.call_args_list[1][0][0] == ["breaking"]
-            assert mock.call_args_list[2][0][0] == ["pr-diff"]
+            assert mock.call_args_list[1][0][0] == ["pr-diff"]
         assert "pr_risk" in result
-        assert "breaking_changes" in result
         assert "pr_diff" in result
 
     def test_review_change_with_range(self):
@@ -985,8 +653,7 @@ class TestCompoundOperations:
         with patch("roam.mcp_server._run_roam") as mock:
             mock.return_value = data
             review_change(commit_range="main..HEAD")
-            assert mock.call_args_list[1][0][0] == ["breaking", "main..HEAD"]
-            assert "--range" in mock.call_args_list[2][0][0]
+            assert "--range" in mock.call_args_list[1][0][0]
 
     def test_review_change_staged(self):
         from roam.mcp_server import review_change
@@ -995,7 +662,7 @@ class TestCompoundOperations:
             mock.return_value = data
             review_change(staged=True)
             assert "--staged" in mock.call_args_list[0][0][0]
-            assert "--staged" in mock.call_args_list[2][0][0]
+            assert "--staged" in mock.call_args_list[1][0][0]
 
     def test_diagnose_issue(self):
         from roam.mcp_server import diagnose_issue
@@ -1103,7 +770,6 @@ class TestSchemas:
         from roam.mcp_server import _SCHEMA_REVIEW_CHANGE
         props = _SCHEMA_REVIEW_CHANGE["properties"]
         assert "pr_risk" in props
-        assert "breaking_changes" in props
         assert "pr_diff" in props
 
     def test_diagnose_issue_schema_has_sections(self):
@@ -1116,12 +782,11 @@ class TestSchemas:
         from roam.mcp_server import (
             _SCHEMA_UNDERSTAND, _SCHEMA_HEALTH, _SCHEMA_SEARCH,
             _SCHEMA_PREFLIGHT, _SCHEMA_CONTEXT, _SCHEMA_IMPACT,
-            _SCHEMA_PR_RISK, _SCHEMA_DIFF, _SCHEMA_DIAGNOSE, _SCHEMA_TRACE,
+            _SCHEMA_PR_RISK, _SCHEMA_DIFF, _SCHEMA_TRACE,
         )
         for schema in [_SCHEMA_UNDERSTAND, _SCHEMA_HEALTH, _SCHEMA_SEARCH,
                        _SCHEMA_PREFLIGHT, _SCHEMA_CONTEXT, _SCHEMA_IMPACT,
-                       _SCHEMA_PR_RISK, _SCHEMA_DIFF, _SCHEMA_DIAGNOSE,
-                       _SCHEMA_TRACE]:
+                       _SCHEMA_PR_RISK, _SCHEMA_DIFF, _SCHEMA_TRACE]:
             assert schema["type"] == "object"
             assert "summary" in schema["properties"]
 

@@ -29,10 +29,6 @@ _SUPPORTED_LANGUAGES = frozenset({
     "go", "rust", "java", "c", "cpp",
     "ruby", "php", "c_sharp", "kotlin", "swift", "scala",
     "vue", "svelte",
-    # Aliased languages (parsed via grammar aliases)
-    "apex", "sfxml", "aura", "visualforce",
-    # Regex-only languages (no tree-sitter grammar)
-    "foxpro",
     "yaml",
     "hcl",
     # Aliased variants
@@ -77,9 +73,6 @@ def get_language_for_file(path: str) -> str | None:
 
     Returns the language name string, or None if unsupported.
     """
-    # Salesforce metadata files: *.cls-meta.xml, *.object-meta.xml, etc.
-    if path.endswith("-meta.xml"):
-        return "sfxml"
     _, ext = os.path.splitext(path)
     ext = ext.lower()
     language = _EXTENSION_MAP.get(ext)
@@ -158,22 +151,6 @@ def _create_extractor(language: str) -> "LanguageExtractor":
     elif language == "swift":
         from .swift_lang import SwiftExtractor
         return SwiftExtractor()
-    # Salesforce extractors
-    elif language == "apex":
-        from .apex_lang import ApexExtractor
-        return ApexExtractor()
-    elif language == "sfxml":
-        from .sfxml_lang import SfxmlExtractor
-        return SfxmlExtractor()
-    elif language == "aura":
-        from .aura_lang import AuraExtractor
-        return AuraExtractor()
-    elif language == "visualforce":
-        from .visualforce_lang import VisualforceExtractor
-        return VisualforceExtractor()
-    elif language == "foxpro":
-        from .foxpro_lang import FoxProExtractor
-        return FoxProExtractor()
     elif language == "yaml":
         from .yaml_lang import YamlExtractor
         return YamlExtractor()

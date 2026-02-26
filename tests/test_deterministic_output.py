@@ -162,28 +162,6 @@ class TestJsonEnvelopeDeterministic:
 # ============================================================================
 
 
-class TestSchemaRegistry:
-    """Verify schema registry reflects the _meta change."""
-
-    def test_timestamp_not_required(self):
-        """timestamp should not be a required top-level field."""
-        from roam.output.schema_registry import ENVELOPE_SCHEMA
-
-        required = ENVELOPE_SCHEMA["required_fields"]
-        assert "timestamp" not in required, (
-            "timestamp moved to _meta, should not be in required_fields"
-        )
-
-    def test_meta_documented(self):
-        """_meta should be documented in optional_fields."""
-        from roam.output.schema_registry import ENVELOPE_SCHEMA
-
-        optional = ENVELOPE_SCHEMA.get("optional_fields", {})
-        assert "_meta" in optional, (
-            "_meta should be documented in optional_fields"
-        )
-
-
 # ============================================================================
 # 4. Graph builder determinism
 # ============================================================================

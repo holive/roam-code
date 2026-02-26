@@ -287,34 +287,6 @@ class TestMetricsHistory:
 # 5. Patterns command: self-detection filter
 # ===========================================================================
 
-class TestPatternsFilter:
-    """Test _is_test_or_detector_path from cmd_patterns.py."""
-
-    def test_filters_test_files(self):
-        from roam.commands.cmd_patterns import _is_test_or_detector_path
-        assert _is_test_or_detector_path("tests/test_basic.py") is True
-        assert _is_test_or_detector_path("test_something.py") is True
-
-    def test_filters_cmd_patterns_itself(self):
-        from roam.commands.cmd_patterns import _is_test_or_detector_path
-        assert _is_test_or_detector_path("src/roam/commands/cmd_patterns.py") is True
-
-    def test_allows_production_files(self):
-        from roam.commands.cmd_patterns import _is_test_or_detector_path
-        assert _is_test_or_detector_path("src/roam/cli.py") is False
-        assert _is_test_or_detector_path("src/roam/commands/cmd_health.py") is False
-
-    def test_filters_test_directories(self):
-        from roam.commands.cmd_patterns import _is_test_or_detector_path
-        assert _is_test_or_detector_path("tests/integration/test_api.py") is True
-        assert _is_test_or_detector_path("spec/models/user_spec.py") is True
-
-    def test_handles_backslashes(self):
-        from roam.commands.cmd_patterns import _is_test_or_detector_path
-        assert _is_test_or_detector_path("tests\\test_basic.py") is True
-        assert _is_test_or_detector_path("src\\roam\\commands\\cmd_patterns.py") is True
-
-
 # ===========================================================================
 # 6. Health command: non-production path exclusion
 # ===========================================================================
