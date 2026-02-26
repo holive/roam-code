@@ -8,12 +8,6 @@ a local SQLite DB. 37 commands, 23 MCP tools, 15+ languages, 100% local, zero AP
 
 **Package:** `roam-code` on PyPI. Entry point: `roam.cli:cli`.
 
-## Documentation Hub
-
-- Getting started tutorial: `docs/site/getting-started.html`
-- Command reference with examples: `docs/site/command-reference.html`
-- Architecture guide and diagram: `docs/site/architecture.html`
-
 ## Quick reference
 
 ```bash
